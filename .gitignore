@@ -1,0 +1,11 @@
+.idea/**
+.vscode/**
+.vstags
+*.bak
+*.tmp
+**/*.bak
+**/*.tmp
+data/config.json
+data/whitelist.json
+data/blacklist.json
+buny-jabber-bot

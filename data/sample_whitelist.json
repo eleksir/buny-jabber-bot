@@ -1,0 +1,24 @@
+# Пример белого списка
+{
+	"whitlist": [
+		{
+			# Если room_name пустой или его нет, это список jid-ов, которых мы не баним ни на одном канале, нигде и никогда
+			"room_name": "",
+			# Собственно, сам список
+			"jid": [
+				"me@jabber.tld",
+				"myself@xmpp.tld",
+				"iren@example.org"
+			]
+		},
+		{
+			# А этот список относится к конференции earth@conference.jabber.tld
+			"room_name": "earth@conference.jabber.tld",
+			"jid": [
+				"meow@street.net",
+				"bzzz@hive.org",
+				"god@heaven.org"
+			]
+		}
+	]
+}
