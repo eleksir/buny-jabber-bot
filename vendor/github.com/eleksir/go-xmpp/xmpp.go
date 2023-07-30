@@ -664,7 +664,7 @@ func (c *Client) init(o *Options) error {
 	c.domain = domain
 
 	if o.Session {
-		//if server support session, open it
+		// if server support session, open it
 		fmt.Fprintf(StanzaWriter, "<iq to='%s' type='set' id='%x'><session xmlns='%s'/></iq>", xmlEscape(domain), cookie, nsSession)
 	}
 
@@ -700,7 +700,7 @@ func (c *Client) startTLSIfRequired(f *streamFeatures, o *Options, domain string
 	tc := o.TLSConfig
 	if tc == nil {
 		tc = DefaultConfig.Clone()
-		//TODO(scott): we should consider using the server's address or reverse lookup
+		// TODO(scott): we should consider using the server's address or reverse lookup
 		tc.ServerName = domain
 	}
 	t := tls.Client(c.conn, tc)
@@ -789,16 +789,16 @@ type Contact struct {
 
 // Presence is an XMPP presence notification.
 type Presence struct {
-	From   string
-	To     string
-	Type   string
-	Show   string
-	Status string
-	Priority string
-	ID string
-	Affilation string
-	Role string
-	JID string
+	From        string
+	To          string
+	Type        string
+	Show        string
+	Status      string
+	Priority    string
+	ID          string
+	Affiliation string
+	Role        string
+	JID         string
 }
 
 type IQ struct {

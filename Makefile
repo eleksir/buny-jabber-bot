@@ -1,13 +1,12 @@
 #!/usr/bin/env gmake -f
 
-GOOPTS=CGO_ENABLED=0
+CGO_ENABLED=0
 BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath
 
 all: clean build
 
 build:
-	${GOOPTS} go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go \
-	             buny.go main.go
+	go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
 
 clean:
 	go clean

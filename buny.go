@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func buny(v xmpp.Presence) error {
+func buny(v xmpp.Presence) error { //nolint:gocognit
 	var err error
 
 	// Если у presence-а есть JID и presence из одной из комнат, в которой мы есть и если его домен в чёрном
@@ -24,7 +24,7 @@ func buny(v xmpp.Presence) error {
 		room := strings.SplitN(v.From, "/", 2)[0]
 
 		if room == "" {
-			log.Infof("We got empty room in repsence event, which kinda strange: %s", spew.Sdump(v))
+			log.Infof("We got empty room field in presence event, which kinda strange: %s", spew.Sdump(v))
 
 			return err
 		}
@@ -58,14 +58,13 @@ func buny(v xmpp.Presence) error {
 		for _, cRoom := range roomsConnected {
 			if cRoom == room {
 				for _, bEntry := range blackList.Blacklist {
-
-					// Обработаем правила гобального чёрного списка
+					// Обработаем правила глобального чёрного списка
 					if bEntry.RoomName == "" {
-						for _, jid_regexp := range bEntry.JidRe {
-							re, err := regexp.Compile(jid_regexp)
+						for _, jidRegexp := range bEntry.JidRe {
+							re, err := regexp.Compile(jidRegexp)
 
 							if err != nil {
-								log.Errorf("Incorrect regexp in blacklist: %s, skipping", jid_regexp)
+								log.Errorf("Incorrect regexp in blacklist: %s, skipping", jidRegexp)
 
 								continue
 							}
@@ -91,7 +90,6 @@ func buny(v xmpp.Presence) error {
 
 								return err
 							}
-
 						}
 
 						continue
@@ -99,11 +97,11 @@ func buny(v xmpp.Presence) error {
 
 					// Обработаем правила конкретного канала, комнаты конференции
 					if bEntry.RoomName == room {
-						for _, jid_regexp := range bEntry.JidRe {
-							re, err := regexp.Compile(jid_regexp)
+						for _, jidRegexp := range bEntry.JidRe {
+							re, err := regexp.Compile(jidRegexp)
 
 							if err != nil {
-								log.Errorf("Incorrect regexp in blacklist: %s, skipping", jid_regexp)
+								log.Errorf("Incorrect regexp in blacklist: %s, skipping", jidRegexp)
 
 								continue
 							}
@@ -129,7 +127,6 @@ func buny(v xmpp.Presence) error {
 
 								return err
 							}
-
 						}
 
 						continue
@@ -141,3 +138,5 @@ func buny(v xmpp.Presence) error {
 
 	return err
 }
+
+/* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

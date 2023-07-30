@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 )
 
-// Конфиг
+// myConfig прототип структурки с конфигом.
 type myConfig struct {
 	Jabber struct {
 		Server                       string   `json:"server,omitempty"`
@@ -32,15 +32,16 @@ type myConfig struct {
 	NoEcho   bool   `json:"noecho,omitempty"`
 }
 
-// Белый список
+// myWhiteList прототип структурки с белым списком jid-ов.
 type myWhiteList struct {
 	Whitelist []struct {
 		RoomName string   `json:"room_name,omitempty"`
 		Jid      []string `json:"jid,omitempty"`
 		WipeBans bool     `json:"wipe_bans,omitempty"`
-	} `json:"whitelist,omitampty"`
+	} `json:"whitelist,omitempty"`
 }
 
+// myBlackList прототип структурки с чёрным списком jid-ов.
 type myBlackList struct {
 	Blacklist []struct {
 		RoomName string   `json:"room_name,omitempty"`
@@ -48,6 +49,8 @@ type myBlackList struct {
 	} `json:"blacklist,omitempty"`
 }
 
+// jabberSimpleIqGetQuery прототип структурки для разбора запросов xmpp discovery query, например,
+// https://xmpp.org/extensions/xep-0030.html#example-18 .
 type jabberSimpleIqGetQuery struct {
 	XMLName xml.Name `xml:"query"`
 	Text    string   `xml:",chardata"`
@@ -55,6 +58,7 @@ type jabberSimpleIqGetQuery struct {
 	Node    string   `xml:"node,attr,omitempty"` // для xmlns="http://jabber.org/protocol/disco#items"
 }
 
+// jabberPubsubIQGetQuery прототип структурки для разбора запросов xmpp pubsub.
 type jabberPubsubIQGetQuery struct {
 	XMLName xml.Name `xml:"pubsub"`
 	Text    string   `xml:",chardata"`
@@ -66,6 +70,8 @@ type jabberPubsubIQGetQuery struct {
 	} `xml:"items"`
 }
 
+// jabberTimeIqGetQuery прототип структурки для разбора IQ запросов на локальное время клиента,
+// https://xmpp.org/extensions/xep-0202.html
 type jabberTimeIqGetQuery struct {
 	// <time xmlns="urn:xmpp:time"/>
 	XMLName xml.Name `xml:"time"`
@@ -73,13 +79,16 @@ type jabberTimeIqGetQuery struct {
 	Xmlns   string   `xml:"xmlns,attr"`
 }
 
+// jabberIqPing прототип структурки для разбора IQ запросов на пинг клиента, https://xmpp.org/extensions/xep-0199.html
 type jabberIqPing struct {
 	XMLName xml.Name `xml:"ping"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
 }
 
-type jabberIqErrorCancelNotAccepatble struct {
+// jabberIqErrorCancelNotAcceptable прототип структурки для разбора IQ ответов, когда сервис (сервер, клиент, etc) не
+// может или не хочет принимать наш iq-запрос https://xmpp.org/extensions/xep-0099.html
+type jabberIqErrorCancelNotAcceptable struct {
 	XMLName       xml.Name `xml:"error"`
 	Text          string   `xml:",chardata"`
 	Type          string   `xml:"type,attr"`

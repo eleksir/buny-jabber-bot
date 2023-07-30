@@ -13,7 +13,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func parseEvent(e interface{}) {
+func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 	lastServerActivity = time.Now().Unix()
 
 	switch v := e.(type) {
@@ -30,7 +30,7 @@ func parseEvent(e interface{}) {
 		// В то же время сообщения от людей приходят с пустым subject, но с заполненным text
 		if v.Text != "" {
 			// Чятики бывают групповые и не групповые, от этого зависит Remote, куда направлять сообщение
-			switch v.Type { //nolint:whitespace
+			switch v.Type { //nolint:wsl,whitespace
 
 			// Групповой чятик
 			case "groupchat":
@@ -87,16 +87,18 @@ func parseEvent(e interface{}) {
 				}
 			}
 
-			var iqStruct jabberSimpleIqGetQuery
-			var parseError bool
+			var (
+				iqStruct   jabberSimpleIqGetQuery
+				parseError bool
+			)
 
 			if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
-				switch iqStruct.Xmlns { //nolint:whitespace
+				switch iqStruct.Xmlns { //nolint:wsl,whitespace
 
 				// Запрос номера версии приложения
 				case "jabber:iq:version":
 					log.Infof("Got IQ get request for version from %s", v.From)
-					answer := "<query xmlns=\"jabber:iq:version\">"
+					answer := "<query xmlns=\"jabber:iq:version\">" //nolint:wsl
 					answer += "<name>buny-jabber-bot</name>"
 					answer += "<version>1.с_чем-то</version>"
 					answer += "<os>линупс</os>"
@@ -109,7 +111,7 @@ func parseEvent(e interface{}) {
 						xmpp.IQTypeResult,
 						answer,
 					); err != nil {
-						log.Errorf("Unable to send verion info to jabber server: id=%s, err=%s", id, err)
+						log.Errorf("Unable to send version info to jabber server: id=%s, err=%s", id, err)
 						os.Exit(1)
 					}
 
@@ -186,9 +188,9 @@ func parseEvent(e interface{}) {
 
 					answer := "<query xmlns=\"http://jabber.org/protocol/disco#info\" "
 					answer += "node=\"http://jabber.org/protocol/commands\" />"
-					answer += "<error type=\"cancel\">"
+					answer += "<error type=\"cancel\">" //nolint:goconst
 					answer += "<service-unavailable xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\" />"
-					answer += "</error>"
+					answer += "</error>" //nolint:goconst
 
 					if id, err := talk.RawInformation(
 						v.To,
@@ -287,7 +289,7 @@ func parseEvent(e interface{}) {
 					default:
 						log.Info("Got unknown IQ get pubsub something request, discarding")
 						log.Info(spew.Sdump(e))
-						parseError = true
+						parseError = true //nolint:wsl
 					}
 				} else {
 					parseError = true
@@ -311,6 +313,7 @@ func parseEvent(e interface{}) {
 						"",
 					); err != nil {
 						log.Errorf("Unable to send pong to jabber server: id=%s, err=%s", id, err)
+
 						os.Exit(1)
 					}
 				}
@@ -335,7 +338,7 @@ func parseEvent(e interface{}) {
 			// Похоже на pong от сервера (по стандарту в ответе нету query, но go-xmpp нам подсовывает это)
 			case v.From == config.Jabber.Server && v.To == talk.JID() && string(v.Query) == "<XMLElement></XMLElement>":
 				log.Debugf("Got S2C pong answer from %s to %s", v.From, v.To)
-				serverPingTimestampRx = time.Now().Unix()
+				serverPingTimestampRx = time.Now().Unix() //nolint:wsl
 
 			// Похоже на понг второй стадии xep-0410 MUC-Ping-а, который у нас не реализован
 			case v.To == talk.JID() && string(v.Query) == "<XMLElement></XMLElement>":
@@ -405,8 +408,10 @@ func parseEvent(e interface{}) {
 		case xmpp.IQTypeError:
 			// Если сервер не хочет пинговаться и отвечает ошибкой на пинг, то наверно он не умеет в пинги,
 			// хотя если мы его пингуем, значит он анонсировал такой capability. Вот, засранец!
-			var iqPingStruct jabberIqPing
-			var parseError = true
+			var (
+				iqPingStruct jabberIqPing
+				parseError   = true
+			)
 
 			if err := xml.Unmarshal(v.Query, &iqPingStruct); err == nil {
 				if iqPingStruct.Xmlns == "urn:xmpp:ping" {
@@ -429,7 +434,7 @@ func parseEvent(e interface{}) {
 
 			// Это у нас пинг xep-0410 и мы не в комнате, предполагается, что надо бы заджойниться
 			if parseError {
-				var iqErrorCancelNotAcceptable jabberIqErrorCancelNotAccepatble
+				var iqErrorCancelNotAcceptable jabberIqErrorCancelNotAcceptable
 
 				if err := xml.Unmarshal(v.Query, &iqErrorCancelNotAcceptable); err == nil {
 					if v.To == talk.JID() {
@@ -503,8 +508,8 @@ func parseEvent(e interface{}) {
 				log.Errorf(spew.Sdump(v))
 			}
 		} else {
-			log.Infof("Presence notification, Type: %s, From: %s, To: %s Show: %s, Status: %s, Affilation: %s, Role: %s, JID: %s",
-				v.Type, v.From, v.To, v.Show, v.Status, v.Affilation, v.Role, v.JID)
+			log.Infof("Presence notification, Type: %s, From: %s, To: %s Show: %s, Status: %s, Affiliation: %s, Role: %s, JID: %s",
+				v.Type, v.From, v.To, v.Show, v.Status, v.Affiliation, v.Role, v.JID)
 
 			// Это наш собственный Presence
 			if v.Show == "" && v.Status == "" {
@@ -544,7 +549,7 @@ func parseEvent(e interface{}) {
 
 				for _, feature := range v.Features {
 					log.Debugf("MUC %s announced that it supports feature: %s", v.From, feature)
-					mucCaps[feature] = true
+					mucCaps[feature] = true //nolint:wsl
 				}
 
 				mucCapsList.Set(v.From, mucCaps)

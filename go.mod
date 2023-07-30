@@ -4,10 +4,10 @@ go 1.20
 
 require (
 	github.com/davecgh/go-spew v1.1.1
-	github.com/eleksir/go-xmpp v1.3.0
+	github.com/eleksir/go-xmpp v1.4.0
 	github.com/hjson/hjson-go v3.3.0+incompatible
 	github.com/sirupsen/logrus v1.9.3
-	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
+	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
 )
 
 require (

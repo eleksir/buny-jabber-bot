@@ -94,8 +94,8 @@ func main() {
 		Debug:                        verboseClient,
 		Session:                      false,
 		Status:                       "xa",
-		StatusMessage:                "echo bot is starting up",
-		DialTimeout:                  10 * time.Second,
+		StatusMessage:                fmt.Sprintf("%s bot is starting up", config.Jabber.Nick),
+		DialTimeout:                  time.Duration(config.Jabber.ConnectionTimeout) * time.Second,
 	}
 
 	go sigHandler()
@@ -145,7 +145,6 @@ func main() {
 			default:
 				// Это уже что-то странное.
 				// Вероятно, ошибка парсинга xml. Собственно, баг сервера, тут мы ничего поделать не можем
-
 				os.Exit(1)
 			}
 		}
