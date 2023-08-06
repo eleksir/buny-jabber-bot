@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/eleksir/go-xmpp"
+	"gopkg.in/tomb.v1"
 )
 
 // Config - это у нас глобальная штука :) .
@@ -45,21 +46,24 @@ var lastServerActivity int64
 
 // Время последней активности MUC-ов, нужно для пингов - посылаем пинги, только если давненько ничего не приходило из
 // muc-ов.
-var lastMucActivity = NewCollection()
+var lastMucActivity *Collection
 
 // Получен ли ответ на запрос disco#info к серверу.
 var serverCapsQueried bool
 
 // sync.Map-ка с капабилити сервера.
-var serverCapsList = NewCollection()
+var serverCapsList *Collection
 
 // sync.Map-ка с комнатами и их capability.
-var mucCapsList = NewCollection()
+var mucCapsList *Collection
 
 // Время, когда был отправлен c2s ping.
 var serverPingTimestampTx int64
 
 // Время, когда был принят s2c pong.
 var serverPingTimestampRx int64
+
+// Объектик для хранения стейта утилизатора горутинок
+var gTomb tomb.Tomb
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

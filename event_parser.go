@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -111,8 +111,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 						xmpp.IQTypeResult,
 						answer,
 					); err != nil {
-						log.Errorf("Unable to send version info to jabber server: id=%s, err=%s", id, err)
-						os.Exit(1)
+						err := errors.New(
+							fmt.Sprintf(
+								"Unable to send version info to jabber server: id=%s, err=%s",
+								id,
+								err,
+							),
+						)
+
+						gTomb.Kill(err)
+
+						return
 					}
 
 					parseError = false
@@ -128,8 +137,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 						xmpp.IQTypeResult,
 						"",
 					); err != nil {
-						log.Errorf("Unable to send pong to jabber server: id=%s, err=%s", id, err)
-						os.Exit(1)
+						err := errors.New(
+							fmt.Sprintf(
+								"Unable to send pong to jabber server: id=%s, err=%s",
+								id,
+								err,
+							),
+						)
+
+						gTomb.Kill(err)
+
+						return
 					}
 
 					parseError = false
@@ -151,8 +169,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 						xmpp.IQTypeResult,
 						answer,
 					); err != nil {
-						log.Errorf("Unable to send last activity time to jabber server: id=%s, err=%s", id, err)
-						os.Exit(1)
+						err := errors.New(
+							fmt.Sprintf(
+								"Unable to send last activity time to jabber server: id=%s, err=%s",
+								id,
+								err,
+							),
+						)
+
+						gTomb.Kill(err)
+
+						return
 					}
 
 					parseError = false
@@ -176,8 +203,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 						xmpp.IQTypeResult,
 						answer,
 					); err != nil {
-						log.Errorf("Unable to send disco#info to jabber server: id=%s, err=%s", id, err)
-						os.Exit(1)
+						err := errors.New(
+							fmt.Sprintf(
+								"Unable to send disco#info to jabber server: id=%s, err=%s",
+								id,
+								err,
+							),
+						)
+
+						gTomb.Kill(err)
+
+						return
 					}
 
 					parseError = false
@@ -199,8 +235,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 						xmpp.IQTypeError,
 						answer,
 					); err != nil {
-						log.Errorf("Unable to send disco#items to jabber server: id=%s, err=%s", id, err)
-						os.Exit(1)
+						err := errors.New(
+							fmt.Sprintf(
+								"Unable to send disco#items to jabber server: id=%s, err=%s",
+								id,
+								err,
+							),
+						)
+
+						gTomb.Kill(err)
+
+						return
 					}
 
 					parseError = false
@@ -237,8 +282,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 							xmpp.IQTypeResult,
 							answer,
 						); err != nil {
-							log.Errorf("Unable to send urn:xmpp:time to jabber server: id=%s, err=%s", id, err)
-							os.Exit(1)
+							err := errors.New(
+								fmt.Sprintf(
+									"Unable to send urn:xmpp:time to jabber server: id=%s, err=%s",
+									id,
+									err,
+								),
+							)
+
+							gTomb.Kill(err)
+
+							return
 						}
 
 						parseError = false
@@ -275,13 +329,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 							xmpp.IQTypeError,
 							answer,
 						); err != nil {
-							log.Errorf(
-								"Unable to send pubsub feature unimplemented to jabber server: id=%s, err=%s",
-								id,
-								err,
+							err := errors.New(
+								fmt.Sprintf(
+									"Unable to send pubsub feature unimplemented to jabber server: id=%s, err=%s",
+									id,
+									err,
+								),
 							)
 
-							os.Exit(1)
+							gTomb.Kill(err)
+
+							return
 						}
 
 						parseError = false
@@ -312,9 +370,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 						xmpp.IQTypeResult,
 						"",
 					); err != nil {
-						log.Errorf("Unable to send pong to jabber server: id=%s, err=%s", id, err)
+						err := errors.New(
+							fmt.Sprintf(
+								"Unable to send pong to jabber server: id=%s, err=%s",
+								id,
+								err,
+							),
+						)
 
-						os.Exit(1)
+						gTomb.Kill(err)
+
+						return
 					}
 				}
 
@@ -394,12 +460,17 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 				xmpp.IQTypeError,
 				answer,
 			); err != nil {
-				log.Errorf("Unable to send set feature unimplemented to jabber server: id=%s, err=%s",
-					id,
-					err,
+				err := errors.New(
+					fmt.Sprintf(
+						"Unable to send set feature unimplemented to jabber server: id=%s, err=%s",
+						id,
+						err,
+					),
 				)
 
-				os.Exit(1)
+				gTomb.Kill(err)
+
+				return
 			}
 
 			log.Debug(spew.Sdump(e))
@@ -449,9 +520,16 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 							time.Sleep(time.Duration(config.Jabber.MucRejoinDelay) * time.Second)
 
 							if _, err := talk.JoinMUCNoHistory(iqErrorCancelNotAcceptable.By, nick); err != nil {
-								log.Errorf("Looks like connection to server also lost")
+								err := errors.New(
+									fmt.Sprintf(
+										"Looks like connection to server also lost err=%s",
+										err,
+									),
+								)
 
-								os.Exit(1)
+								gTomb.Kill(err)
+
+								return
 							}
 						} else {
 							log.Error(
@@ -519,7 +597,9 @@ func parseEvent(e interface{}) { //nolint:gocognit,gocyclo
 			}
 
 			if err := buny(v); err != nil {
-				os.Exit(1)
+				gTomb.Kill(err)
+
+				return
 			}
 		}
 

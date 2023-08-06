@@ -1,7 +1,8 @@
 package main
 
 import (
-	"os"
+	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -84,8 +85,17 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 									"http://jabber.org/protocol/muc#admin",
 									ban,
 								); err != nil {
-									log.Errorf("Unable to ban user: id=%s, err=%s", id, err)
-									os.Exit(1)
+									err := errors.New(
+										fmt.Sprintf(
+											"Unable to ban user: id=%s, err=%s",
+											id,
+											err,
+										),
+									)
+
+									gTomb.Kill(err)
+
+									continue
 								}
 
 								return err
@@ -121,8 +131,17 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 									"http://jabber.org/protocol/muc#admin",
 									ban,
 								); err != nil {
-									log.Errorf("Unable to ban user: id=%s, err=%s", id, err)
-									os.Exit(1)
+									err := errors.New(
+										fmt.Sprintf(
+											"Unable to ban user: id=%s, err=%s",
+											id,
+											err,
+										),
+									)
+
+									gTomb.Kill(err)
+
+									continue
 								}
 
 								return err

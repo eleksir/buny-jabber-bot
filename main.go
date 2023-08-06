@@ -12,6 +12,7 @@ import (
 
 	"github.com/eleksir/go-xmpp"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/tomb.v1"
 )
 
 func init() {
@@ -43,12 +44,6 @@ func init() {
 		log.SetLevel(log.InfoLevel)
 	}
 
-	//  Пока про capabilities мы ничего не знаем
-	serverCapsQueried = false
-
-	// Мы пока что не пинговали сервер.
-	serverPingTimestampRx = 0
-	serverPingTimestampTx = 0
 }
 
 func main() {
@@ -79,77 +74,122 @@ func main() {
 	// github.com/mattn/go-xmpp пишет в stdio, нам этого не надо, ловим выхлоп его в logrus с уровнем trace
 	xmpp.DebugWriter = log.WithFields(log.Fields{"logger": "stdlib"}).WriterLevel(log.TraceLevel)
 
-	options = &xmpp.Options{ //nolint:exhaustruct
-		Host:     fmt.Sprintf("%s:%d", config.Jabber.Server, config.Jabber.Port),
-		User:     config.Jabber.User,
-		Password: config.Jabber.Password,
-		Resource: config.Jabber.Resource,
-		NoTLS:    !config.Jabber.Ssl,
-		StartTLS: config.Jabber.StartTLS,
-		TLSConfig: &tls.Config{ //nolint:exhaustruct
-			ServerName:         config.Jabber.Server,
-			InsecureSkipVerify: !config.Jabber.SslVerify, //nolint:gosec
-		},
-		InsecureAllowUnencryptedAuth: config.Jabber.InsecureAllowUnencryptedAuth,
-		Debug:                        verboseClient,
-		Session:                      false,
-		Status:                       "xa",
-		StatusMessage:                fmt.Sprintf("%s bot is starting up", config.Jabber.Nick),
-		DialTimeout:                  time.Duration(config.Jabber.ConnectionTimeout) * time.Second,
-	}
-
+	// Хэндлер сигналов не надо трогать, он нужен для завершения программы целиком
 	go sigHandler()
 	signal.Notify(sigChan, os.Interrupt)
-	// Установим коннект
-	establishConnection()
 
-	serverPingTimestampRx = time.Now().Unix() // Считаем, что если коннект запустился, то первый пинг успешен
-
-	// Тыкаем сервер палочкой, проверяем, что коннект жив и переустанавливаем его, если он не жив
-	go probeServerLiveness()
-
-	// Тыкаем muc-и палочкой, проверяем, что они живы и пере-заходим в них, если пинги пропали
-	go probeMUCLiveness()
-
-	// Гребём сообщения...
 	for {
-		// Стриггерилось завершение работы приложения, или соединение не установлено (порвалось, например)
-		// грести не надо
-		if shutdown {
-			break
+		options = &xmpp.Options{ //nolint:exhaustruct
+			Host:     fmt.Sprintf("%s:%d", config.Jabber.Server, config.Jabber.Port),
+			User:     config.Jabber.User,
+			Password: config.Jabber.Password,
+			Resource: config.Jabber.Resource,
+			NoTLS:    !config.Jabber.Ssl,
+			StartTLS: config.Jabber.StartTLS,
+			TLSConfig: &tls.Config{ //nolint:exhaustruct
+				ServerName:         config.Jabber.Server,
+				InsecureSkipVerify: !config.Jabber.SslVerify, //nolint:gosec
+			},
+			InsecureAllowUnencryptedAuth: config.Jabber.InsecureAllowUnencryptedAuth,
+			Debug:                        verboseClient,
+			Session:                      false,
+			Status:                       "xa",
+			StatusMessage:                fmt.Sprintf("%s bot is starting up", config.Jabber.Nick),
+			DialTimeout:                  time.Duration(config.Jabber.ConnectionTimeout) * time.Second,
 		}
 
-		if !isConnected {
-			continue
-		}
+		// Через tomb попробуем попробуем сделать выход горутинок управляемым
+		gTomb = tomb.Tomb{}
 
-		chat, err := talk.Recv()
+		// Устанавливаем соединение и гребём события, посылаемые сервером
+		myLoop()
 
-		if err != nil {
-			log.Errorf("Unable to get events from server: %s", err)
+		log.Error(gTomb.Wait())
+		time.Sleep(time.Duration(config.Jabber.ReconnectDelay) * time.Second)
+	}
+}
 
-			switch {
-			// Стрим не читается, он закрылся с той стороны во время чтения
-			case errors.Is(err, io.EOF):
-				os.Exit(1)
+func myLoop() {
+	defer gTomb.Done()
 
-			// Пытаемся читать закрытый сокет
-			case errors.Is(err, net.ErrClosed):
-				os.Exit(1)
+	for {
+		select {
+		case <-gTomb.Dying():
+			return
+		default:
+			// Зададим начальное значение глобальным переменным
+			serverPingTimestampRx = 0
+			serverPingTimestampTx = 0
+			roomsConnected = make([]string, 1)
+			lastActivity = 0
+			lastServerActivity = 0
+			lastMucActivity = NewCollection()
+			serverCapsQueried = false
+			serverCapsList = NewCollection()
+			mucCapsList = NewCollection()
+			serverPingTimestampTx = 0
+			serverPingTimestampRx = 0
 
-			// Не смогли записать в сокет
-			case errors.Is(err, net.ErrWriteToConnected):
-				os.Exit(1)
+			// Установим коннект
+			establishConnection()
 
-			// Не сетевая проблема
-			default:
-				// Это уже что-то странное.
-				// Вероятно, ошибка парсинга xml. Собственно, баг сервера, тут мы ничего поделать не можем
-				os.Exit(1)
+			serverPingTimestampRx = time.Now().Unix() // Считаем, что если коннект запустился, то первый пинг успешен
+
+			// Тыкаем сервер палочкой, проверяем, что коннект жив и переустанавливаем его, если он не жив
+			go probeServerLiveness()
+
+			// Тыкаем muc-и палочкой, проверяем, что они живы и пере-заходим в них, если пинги пропали
+			go probeMUCLiveness()
+
+			// Гребём сообщения...
+			for {
+				// Стриггерилось завершение работы приложения, или соединение не установлено (порвалось, например)
+				// грести не надо
+				if shutdown {
+					break
+				}
+
+				if !isConnected {
+					continue
+				}
+
+				chat, err := talk.Recv()
+
+				if err != nil {
+					log.Errorf("Unable to get events from server: %s", err)
+
+					switch {
+					// Стрим не читается, он закрылся с той стороны во время чтения
+					case errors.Is(err, io.EOF):
+						err := errors.New("Tcp stream closed while reading")
+						gTomb.Kill(err)
+						continue
+
+					// Пытаемся читать закрытый сокет
+					case errors.Is(err, net.ErrClosed):
+						err := errors.New("Unable to read closed socket")
+						gTomb.Kill(err)
+						continue
+
+					// Не смогли записать в сокет
+					case errors.Is(err, net.ErrWriteToConnected):
+						err := errors.New("Unable to write to socket")
+						gTomb.Kill(err)
+						continue
+
+					// Не сетевая проблема
+					default:
+						// Это уже что-то странное.
+						// Вероятно, ошибка парсинга xml. Собственно, баг сервера, тут мы ничего поделать не можем
+						err := errors.New("error during parsing received message")
+						gTomb.Kill(err)
+						continue
+					}
+				}
+
+				parseEvent(chat)
 			}
 		}
-
-		parseEvent(chat)
 	}
 }
 
