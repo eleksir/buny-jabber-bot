@@ -24,7 +24,7 @@ func NewCollection() *Collection {
 	return c
 }
 
-// (collection *Collection) Get(key interface{}) (interface{}, bool) достаёт данные по заданному ключу из коллекции.
+// Get достаёт данные по заданному ключу из коллекции.
 func (collection *Collection) Get(key interface{}) (interface{}, bool) {
 	obj, exists := collection.items.Load(key)
 
@@ -37,14 +37,14 @@ func (collection *Collection) Get(key interface{}) (interface{}, bool) {
 	return item.data, true
 }
 
-// (collection *Collection) Set(key interface{}, value interface{}) сохраняет данные с заданным ключом в коллекцию.
+// Set сохраняет данные с заданным ключом в коллекцию.
 func (collection *Collection) Set(key interface{}, value interface{}) {
 	collection.items.Store(key, item{
 		data: value,
 	})
 }
 
-// (collection *Collection) Range(f func(key, value interface{}) bool) применяет функцию f ко всем ключам в коллекции.
+// Range применяет функцию f ко всем ключам в коллекции.
 func (collection *Collection) Range(f func(key, value interface{}) bool) {
 	fn := func(key, value interface{}) bool {
 		item := value.(item)
@@ -55,12 +55,12 @@ func (collection *Collection) Range(f func(key, value interface{}) bool) {
 	collection.items.Range(fn)
 }
 
-// (collection *Collection) Delete(key interface{}) удаляет ключ и значение из коллекции данных.
+// Delete удаляет ключ и значение из коллекции данных.
 func (collection *Collection) Delete(key interface{}) {
 	collection.items.Delete(key)
 }
 
-// (collection *Collection) Close() очищает и высвобождает ресурсы, занятые коллекцией.
+// Close очищает и высвобождает ресурсы, занятые коллекцией.
 func (collection *Collection) Close() {
 	collection.close <- struct{}{}
 	collection.items = sync.Map{}

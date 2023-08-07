@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -16,7 +15,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// sigHandler() Хэндлер сигналов закрывает все бд, все сетевые соединения и сваливает из приложения.
+// sigHandler Хэндлер сигналов закрывает все бд, все сетевые соединения и сваливает из приложения.
 func sigHandler() {
 	log.Debug("Installing signal handler")
 
@@ -256,7 +255,7 @@ func readConfig() { //nolint:gocognit
 	}
 }
 
-// readWhitelist() читает и валидирует белые списки пользователей.
+// readWhitelist читает и валидирует белые списки пользователей.
 func readWhitelist() {
 	whitelistLoaded := false
 	executablePath, err := os.Executable()
@@ -346,7 +345,7 @@ func readWhitelist() {
 	}
 }
 
-// readBlacklist() читает и валидирует чёрные списки пользователей.
+// readBlacklist читает и валидирует чёрные списки пользователей.
 func readBlacklist() {
 	blacklistLoaded := false
 	executablePath, err := os.Executable()
@@ -437,7 +436,7 @@ func readBlacklist() {
 	}
 }
 
-// establishConnection() устанавливает соединение с jabber-сервером.
+// establishConnection устанавливает соединение с jabber-сервером.
 func establishConnection() {
 	var err error
 
@@ -454,6 +453,7 @@ func establishConnection() {
 
 	if err != nil {
 		gTomb.Kill(err)
+
 		return
 	}
 
@@ -498,7 +498,7 @@ func establishConnection() {
 	}
 }
 
-// joinMuc(room string) джойнится к конференциям/каналам/комнатам в джаббере.
+// joinMu джойнится к конференциям/каналам/комнатам в джаббере.
 func joinMuc(room string) {
 	log.Debugf("Sending disco#info from %s to %s", talk.JID(), room)
 
@@ -581,7 +581,7 @@ func joinMuc(room string) {
 	}
 }
 
-// probeServerLiveness() проверяет живость соединения с сервером. Для многих серверов обязательная штука, без которой
+// probeServerLiveness проверяет живость соединения с сервером. Для многих серверов обязательная штука, без которой
 // они выкидывают клиента через некоторое время неактивности.
 func probeServerLiveness() { //nolint:gocognit
 	defer gTomb.Done()
@@ -634,14 +634,13 @@ func probeServerLiveness() { //nolint:gocognit
 							switch {
 							// Давненько мы не получали понгов от сервера, вероятно, соединение с сервером утеряно?
 							case rxTimeAgo > (rxTimeout * 2):
-								err := errors.New(
-									fmt.Sprintf(
-										"Stall connection detected. No c2s pong for %d seconds",
-										rxTimeAgo,
-									),
+								err := fmt.Errorf( //nolint:goerr113
+									"stall connection detected. No c2s pong for %d seconds",
+									rxTimeAgo,
 								)
 
 								gTomb.Kill(err)
+
 								continue
 
 							// По-умолчанию, мы отправляем c2s пинг
@@ -650,6 +649,7 @@ func probeServerLiveness() { //nolint:gocognit
 
 								if err := talk.PingC2S(talk.JID(), config.Jabber.Server); err != nil {
 									gTomb.Kill(err)
+
 									continue
 								}
 
@@ -660,6 +660,7 @@ func probeServerLiveness() { //nolint:gocognit
 
 							if err := talk.PingC2S(talk.JID(), config.Jabber.Server); err != nil {
 								gTomb.Kill(err)
+
 								continue
 							}
 
@@ -672,6 +673,7 @@ func probeServerLiveness() { //nolint:gocognit
 
 						if _, err := talk.SendKeepAlive(); err != nil {
 							gTomb.Kill(err)
+
 							continue
 						}
 					}
@@ -680,6 +682,7 @@ func probeServerLiveness() { //nolint:gocognit
 
 					if _, err := talk.SendKeepAlive(); err != nil {
 						gTomb.Kill(err)
+
 						continue
 					}
 				}
@@ -688,8 +691,8 @@ func probeServerLiveness() { //nolint:gocognit
 	}
 }
 
-// probeMUCLiveness() Пингует MUC-и, нужно для проверки, что клиент ещё находится в MUC-е.
-func probeMUCLiveness() {
+// probeMUCLiveness Пингует MUC-и, нужно для проверки, что клиент ещё находится в MUC-е.
+func probeMUCLiveness() { //nolint:gocognit
 	defer gTomb.Done()
 
 	for {

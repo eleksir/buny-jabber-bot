@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -70,7 +69,7 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 								continue
 							}
 
-							if re.Match([]byte(evilJid)) {
+							if re.MatchString(evilJid) {
 								log.Infof("Hammer falls on %s", v.JID)
 								// https://xmpp.org/extensions/xep-0045.html#ban баним вот таким сообщением
 								ban := "<item affiliation='outcast' jid='" + evilJid + "'>"
@@ -85,12 +84,10 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 									"http://jabber.org/protocol/muc#admin",
 									ban,
 								); err != nil {
-									err := errors.New(
-										fmt.Sprintf(
-											"Unable to ban user: id=%s, err=%s",
-											id,
-											err,
-										),
+									err := fmt.Errorf(
+										"unable to ban user: id=%s, err=%w",
+										id,
+										err,
 									)
 
 									gTomb.Kill(err)
@@ -116,7 +113,7 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 								continue
 							}
 
-							if re.Match([]byte(evilJid)) {
+							if re.MatchString(evilJid) {
 								log.Infof("Hammer falls on %s", v.JID)
 								// https://xmpp.org/extensions/xep-0045.html#ban баним вот таким сообщением
 								ban := "<item affiliation='outcast' jid='" + evilJid + "'>"
@@ -131,12 +128,10 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 									"http://jabber.org/protocol/muc#admin",
 									ban,
 								); err != nil {
-									err := errors.New(
-										fmt.Sprintf(
-											"Unable to ban user: id=%s, err=%s",
-											id,
-											err,
-										),
+									err := fmt.Errorf(
+										"unable to ban user: id=%s, err=%w",
+										id,
+										err,
 									)
 
 									gTomb.Kill(err)

@@ -43,7 +43,6 @@ func init() {
 	default:
 		log.SetLevel(log.InfoLevel)
 	}
-
 }
 
 func main() {
@@ -98,7 +97,7 @@ func main() {
 			DialTimeout:                  time.Duration(config.Jabber.ConnectionTimeout) * time.Second,
 		}
 
-		// Через tomb попробуем попробуем сделать выход горутинок управляемым
+		// Через tomb попробуем сделать выход горутинок управляемым
 		gTomb = tomb.Tomb{}
 
 		// Устанавливаем соединение и гребём события, посылаемые сервером
@@ -161,28 +160,32 @@ func myLoop() {
 					switch {
 					// Стрим не читается, он закрылся с той стороны во время чтения
 					case errors.Is(err, io.EOF):
-						err := errors.New("Tcp stream closed while reading")
+						err := fmt.Errorf("tcp stream closed while reading, err=%w", err)
 						gTomb.Kill(err)
+
 						continue
 
 					// Пытаемся читать закрытый сокет
 					case errors.Is(err, net.ErrClosed):
-						err := errors.New("Unable to read closed socket")
+						err := fmt.Errorf("unable to read closed socket, err=%w", err)
 						gTomb.Kill(err)
+
 						continue
 
 					// Не смогли записать в сокет
 					case errors.Is(err, net.ErrWriteToConnected):
-						err := errors.New("Unable to write to socket")
+						err := fmt.Errorf("unable to write to socket, err=%w", err)
 						gTomb.Kill(err)
+
 						continue
 
 					// Не сетевая проблема
 					default:
 						// Это уже что-то странное.
 						// Вероятно, ошибка парсинга xml. Собственно, баг сервера, тут мы ничего поделать не можем
-						err := errors.New("error during parsing received message")
+						err := fmt.Errorf("error during parsing received message, err=%w", err)
 						gTomb.Kill(err)
+
 						continue
 					}
 				}

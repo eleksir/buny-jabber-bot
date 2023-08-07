@@ -25,7 +25,7 @@ type myConfig struct {
 		Password                     string   `json:"password,omitempty"`
 		Channels                     []string `json:"channels"`
 		OutcastDomains               []string `json:"outcast_domains,omitempty"`
-	}
+	} `json:"jabber,omitempty"`
 
 	Loglevel string `json:"loglevel,omitempty"`
 	Log      string `json:"log,omitempty"`
