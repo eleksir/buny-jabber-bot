@@ -71,6 +71,24 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 
 							if re.MatchString(evilJid) {
 								log.Infof("Hammer falls on %s", v.JID)
+
+								if config.Jabber.BanPhrasesEnable {
+									phrase := randomPhrase(config.Jabber.BanPhrases)
+
+									if _, err := talk.Send(
+										xmpp.Chat{ //nolint:exhaustruct
+											Remote: room,
+											Text:   phrase,
+											Type:   v.Type,
+										},
+									); err != nil {
+										gTomb.Killf("unable to send phrase to room %s: %w", room, err)
+
+										// Здесь возвращаем nil, т.к. за нас ошибку залоггирует код выше
+										return nil
+									}
+								}
+
 								// https://xmpp.org/extensions/xep-0045.html#ban баним вот таким сообщением
 								ban := "<item affiliation='outcast' jid='" + evilJid + "'>"
 								ban += "<reason />"
@@ -115,6 +133,24 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 
 							if re.MatchString(evilJid) {
 								log.Infof("Hammer falls on %s", v.JID)
+
+								if config.Jabber.BanPhrasesEnable {
+									phrase := randomPhrase(config.Jabber.BanPhrases)
+
+									if _, err := talk.Send(
+										xmpp.Chat{ //nolint:exhaustruct
+											Remote: room,
+											Text:   phrase,
+											Type:   v.Type,
+										},
+									); err != nil {
+										gTomb.Killf("unable to send phrase to room %s: %w", room, err)
+
+										// Здесь возвращаем nil, т.к. за нас ошибку залоггирует код выше
+										return nil
+									}
+								}
+
 								// https://xmpp.org/extensions/xep-0045.html#ban баним вот таким сообщением
 								ban := "<item affiliation='outcast' jid='" + evilJid + "'>"
 								ban += "<reason />"
