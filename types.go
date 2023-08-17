@@ -50,8 +50,9 @@ type myWhiteList struct {
 // myBlackList прототип структурки с чёрным списком jid-ов.
 type myBlackList struct {
 	Blacklist []struct {
-		RoomName string   `json:"room_name,omitempty"`
-		JidRe    []string `json:"jid_re,omitempty"`
+		RoomName     string   `json:"room_name,omitempty"`
+		ReasonEnable bool     `json:"reason_enable,omitempty"`
+		JidRe        []string `json:"jid_re,omitempty"`
 	} `json:"blacklist,omitempty"`
 }
 

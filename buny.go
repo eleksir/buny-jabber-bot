@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/eleksir/go-xmpp"
@@ -82,7 +83,8 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 											Type:   v.Type,
 										},
 									); err != nil {
-										gTomb.Killf("unable to send phrase to room %s: %w", room, err)
+										err := fmt.Errorf("unable to send phrase to room %s: %w", room, err)
+										gTomb.Kill(err)
 
 										// Здесь возвращаем nil, т.к. за нас ошибку залоггирует код выше
 										return nil
@@ -91,7 +93,22 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 
 								// https://xmpp.org/extensions/xep-0045.html#ban баним вот таким сообщением
 								ban := "<item affiliation='outcast' jid='" + evilJid + "'>"
-								ban += "<reason />"
+
+								if bEntry.ReasonEnable {
+									var t = time.Now()
+									ban += fmt.Sprintf(
+										"<reason>autoban at %04d.%02d.%02d %02d:%02d:%02d</reason>",
+										t.Year(),
+										t.Month(),
+										t.Day(),
+										t.Hour(),
+										t.Minute(),
+										t.Second(),
+									)
+								} else {
+									ban += "<reason />"
+								}
+
 								ban += "</item>"
 
 								if id, err := talk.RawInformationQuery(
@@ -144,7 +161,8 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 											Type:   v.Type,
 										},
 									); err != nil {
-										gTomb.Killf("unable to send phrase to room %s: %w", room, err)
+										err := fmt.Errorf("unable to send phrase to room %s: %w", room, err)
+										gTomb.Kill(err)
 
 										// Здесь возвращаем nil, т.к. за нас ошибку залоггирует код выше
 										return nil
@@ -153,7 +171,22 @@ func buny(v xmpp.Presence) error { //nolint:gocognit
 
 								// https://xmpp.org/extensions/xep-0045.html#ban баним вот таким сообщением
 								ban := "<item affiliation='outcast' jid='" + evilJid + "'>"
-								ban += "<reason />"
+
+								if bEntry.ReasonEnable {
+									var t = time.Now()
+									ban += fmt.Sprintf(
+										"<reason>autoban at %04d.%02d.%02d %02d:%02d:%02d</reason>",
+										t.Year(),
+										t.Month(),
+										t.Day(),
+										t.Hour(),
+										t.Minute(),
+										t.Second(),
+									)
+								} else {
+									ban += "<reason />"
+								}
+
 								ban += "</item>"
 
 								if id, err := talk.RawInformationQuery(
