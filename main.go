@@ -93,7 +93,7 @@ func main() {
 			Debug:                        verboseClient,
 			Session:                      false,
 			Status:                       "xa",
-			StatusMessage:                fmt.Sprintf("%s bot is starting up", config.Jabber.Nick),
+			StatusMessage:                randomPhrase(config.Jabber.StartupStatus),
 			DialTimeout:                  time.Duration(config.Jabber.ConnectionTimeout) * time.Second,
 		}
 

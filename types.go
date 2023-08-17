@@ -24,12 +24,18 @@ type myConfig struct {
 		User                         string   `json:"user,omitempty"`
 		Password                     string   `json:"password,omitempty"`
 		Channels                     []string `json:"channels"`
-		OutcastDomains               []string `json:"outcast_domains,omitempty"`
+		StartupStatus                []string `json:"startup_status,omitempty"`
+		RuntimeStatus                struct {
+			Text              []string `json:"text,omitempty""`
+			RotationTime      int64    `json:"rotation_time,omitempty"`
+			RotationSplayTime int64    `json:"rotation_splay_time,omitempty"`
+		} `json:"runtime_status,omitempty"`
+		BanPhrasesEnable bool     `json:"ban_phrases_enable,omitempty"`
+		BanPhrases       []string `json:"ban_phrases,omitempty"`
 	} `json:"jabber,omitempty"`
 
 	Loglevel string `json:"loglevel,omitempty"`
 	Log      string `json:"log,omitempty"`
-	NoEcho   bool   `json:"noecho,omitempty"`
 }
 
 // myWhiteList прототип структурки с белым списком jid-ов.

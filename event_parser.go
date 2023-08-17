@@ -22,10 +22,6 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 		log.Debugf("Looks like message, ChatType: %s, From: %s, Subject: %s Text: %s",
 			v.Type, v.Remote, v.Subject, v.Text)
 
-		if config.NoEcho {
-			return
-		}
-
 		// Топик чятика присылается в виде сообщения с subject, но без text
 		// В то же время сообщения от людей приходят с пустым subject, но с заполненным text
 		if v.Text != "" {

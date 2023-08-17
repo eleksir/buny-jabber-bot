@@ -67,7 +67,7 @@ func sigHandler() {
 
 // readConfig читает и валидирует конфиг, а также выставляет некоторые default-ы, если значений для параметров в конфиге
 // нет.
-func readConfig() { //nolint:gocognit
+func readConfig() { //nolint:gocognit,gocyclo
 	configLoaded := false
 	executablePath, err := os.Executable()
 
@@ -227,6 +227,26 @@ func readConfig() { //nolint:gocognit
 
 		// Если sampleConfig.Jabber.Password не задан, то авторизации не будет
 		// Если sampleConfig.Jabber.Sasl не задан, то авторизация происходит через NickServ
+
+		// Если sampleConfig.Jabber.BanPhrasesEnable не задан, то он false
+
+		// Если список фраз, с которыми банят пустой, то вносим в него одну позицию с пустой строкой
+		if len(sampleConfig.Jabber.BanPhrases) == 0 {
+			sampleConfig.Jabber.BanPhrases[0] = ""
+		}
+
+		// Если список фраз с которыми стартует бот пустой, вносим в него 1 запись с пустой строкой
+		if len(sampleConfig.Jabber.StartupStatus) == 0 {
+			sampleConfig.Jabber.StartupStatus[0] = ""
+		}
+
+		// Если список статусов, с которыми работает бот пустой, вносим в него 1 запись с пустой строкой
+		if len(sampleConfig.Jabber.RuntimeStatus.Text) == 0 {
+			sampleConfig.Jabber.RuntimeStatus.Text[0] = ""
+		}
+
+		// Если sampleConfig.Jabber.RuntimeStatus.RotationTime не задан, то он равен 0
+		// Если sampleConfig.Jabber.RuntimeStatus.RotationSplayTime не задан, то он равен 0
 
 		// Нам бот нужен в каких-то чат-румах, а не "просто так"
 		if len(sampleConfig.Jabber.Channels) < 1 {
@@ -471,16 +491,7 @@ func establishConnection() {
 		go joinMuc(room)
 	}
 
-	if _, err := talk.SendPresence(
-		xmpp.Presence{ //nolint:exhaustruct
-			Status: "Ready to chat",
-		},
-	); err != nil {
-		log.Infof("Unable to send presence to jabber server: %s", err)
-		gTomb.Kill(err)
-
-		return
-	}
+	go RotateStatus("")
 
 	lastActivity = time.Now().Unix()
 	connecting = false
@@ -568,17 +579,9 @@ func joinMuc(room string) {
 	// Вот теперь точно можно слать статус.
 	log.Infof("Joined to MUC: %s", room)
 
-	if _, err := talk.SendPresence(
-		xmpp.Presence{ //nolint:exhaustruct
-			To:     room,
-			Status: "Ready to chat",
-		},
-	); err != nil {
-		log.Infof("Unable to send presence to MUC %s: %s", room, err)
-		gTomb.Kill(err)
+	go RotateStatus(room)
 
-		return
-	}
+	return
 }
 
 // probeServerLiveness проверяет живость соединения с сервером. Для многих серверов обязательная штука, без которой
@@ -757,6 +760,68 @@ func probeMUCLiveness() { //nolint:gocognit
 			}
 		}
 	}
+}
+
+// RotateStatus периодически изменяет статус бота в MUC-е согласно настройкам из кофига.
+func RotateStatus(room string) {
+	defer gTomb.Done()
+
+	for {
+		select {
+		case <-gTomb.Dying():
+			return
+
+		default:
+			// TODO: Переделать на ticker-ы
+			totalSleepTime := time.Duration(config.Jabber.RuntimeStatus.RotationTime) * time.Second
+			totalSleepTime += time.Duration(config.Jabber.RuntimeStatus.RotationSplayTime) * time.Second
+
+			for {
+				status := randomPhrase(config.Jabber.RuntimeStatus.Text)
+				log.Debugf("Set status for MUC: %s to: %s", room, status)
+
+				var p xmpp.Presence
+
+				if room != "" {
+					p = xmpp.Presence{ //nolint:exhaustruct
+						To:     room,
+						Status: status,
+					}
+				} else {
+					p = xmpp.Presence{ //nolint:exhaustruct
+						Status: status,
+					}
+				}
+
+				if _, err := talk.SendPresence(p); err != nil {
+					log.Infof("Unable to send presence to MUC %s: %s", room, err)
+					gTomb.Kill(err)
+
+					return
+				}
+
+				// Если мы не хотим ротировать, то цикл нам тут не нужен, просто выходим.
+				if config.Jabber.RuntimeStatus.RotationTime == 0 {
+					gTomb.Done()
+
+					return
+				}
+
+				time.Sleep(totalSleepTime)
+			}
+		}
+	}
+}
+
+// randomPhrase Выдаёт одну рандомную фразу из даденного списка фраз.
+func randomPhrase(list []string) string {
+	phrase := ""
+
+	if listLen := len(list); listLen > 0 {
+		phrase = list[rand.Intn(listLen)] //nolint:gosec
+	}
+
+	return phrase
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */
