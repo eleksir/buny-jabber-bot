@@ -26,7 +26,7 @@ type myConfig struct {
 		Channels                     []string `json:"channels"`
 		StartupStatus                []string `json:"startup_status,omitempty"`
 		RuntimeStatus                struct {
-			Text              []string `json:"text,omitempty""`
+			Text              []string `json:"text,omitempty"`
 			RotationTime      int64    `json:"rotation_time,omitempty"`
 			RotationSplayTime int64    `json:"rotation_splay_time,omitempty"`
 		} `json:"runtime_status,omitempty"`
