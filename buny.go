@@ -68,6 +68,10 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 					// Обработаем правила глобального чёрного списка
 					if bEntry.RoomName == "" {
 						for _, jidRegexp := range bEntry.JidRe {
+							if jidRegexp == "" {
+								continue
+							}
+
 							re, err := regexp.Compile(jidRegexp)
 
 							if err != nil {
@@ -94,6 +98,10 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 						}
 
 						for _, nickRegexp := range bEntry.NickRe {
+							if nickRegexp == "" {
+								continue
+							}
+
 							re, err := regexp.Compile(nickRegexp)
 
 							if err != nil {
@@ -126,6 +134,10 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 					// Обработаем правила конкретного канала, комнаты конференции
 					if bEntry.RoomName == room {
 						for _, jidRegexp := range bEntry.JidRe {
+							if jidRegexp == "" {
+								continue
+							}
+
 							re, err := regexp.Compile(jidRegexp)
 
 							if err != nil {
@@ -153,6 +165,10 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 
 						if bEntry.RoomName == room {
 							for _, nickRegexp := range bEntry.NickRe {
+								if nickRegexp == "" {
+									continue
+								}
+
 								re, err := regexp.Compile(nickRegexp)
 
 								if err != nil {
