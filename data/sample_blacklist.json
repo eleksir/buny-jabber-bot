@@ -12,6 +12,11 @@
 				"^[cC]hris(topher)?@",
 				"^(his|her)_cat@sweet.home/.*$",
 				"^(her|his)_dog@.*\\.street/.*"
+			],
+			# Список регулярок nick-ов злодеев
+			"nick_re": [
+				"^(Annoying_)?[F|f]ly$",
+				"^Buzzing_Wasp$"
 			]
 		}
 	]
