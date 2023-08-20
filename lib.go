@@ -580,8 +580,6 @@ func joinMuc(room string) {
 	log.Infof("Joined to MUC: %s", room)
 
 	go RotateStatus(room)
-
-	return
 }
 
 // probeServerLiveness проверяет живость соединения с сервером. Для многих серверов обязательная штука, без которой

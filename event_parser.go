@@ -94,18 +94,12 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				// Запрос номера версии приложения
 				case "jabber:iq:version":
 					log.Infof("Got IQ get request for version from %s", v.From)
-					answer := "<query xmlns=\"jabber:iq:version\">" //nolint:wsl
-					answer += "<name>buny-jabber-bot</name>"
-					answer += "<version>1.с_чем-то</version>"
-					answer += "<os>линупс</os>"
-					answer += "</query>"
 
-					if id, err := talk.RawInformation(
-						v.To,
-						v.From,
-						v.ID,
-						xmpp.IQTypeResult,
-						answer,
+					if id, err := talk.IqVersionResponse(
+						v,
+						"buny-jabber-bot",
+						"1.с_чем-то",
+						"линупс",
 					); err != nil {
 						err := fmt.Errorf(
 							"unable to send version info to jabber server: id=%s, err=%w",
@@ -124,13 +118,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				case "urn:xmpp:ping":
 					log.Infof("Got IQ get request for pong from %s", v.From)
 
-					if id, err := talk.RawInformation(
-						v.To,
-						v.From,
-						v.ID,
-						xmpp.IQTypeResult,
-						"",
-					); err != nil {
+					if id, err := talk.PingResponse(v); err != nil {
 						err := fmt.Errorf(
 							"unable to send pong to jabber server: id=%s, err=%w",
 							id,
@@ -145,22 +133,11 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					parseError = false
 
 				// У нас запросили время последней активности. В нашем случае это либо время запуска клиента, либо время
-				// последней фразы в чяти.
+				// последней фразы в чяти. Xep-0012.
 				case "jabber:iq:last":
 					log.Infof("Got IQ get last activity time request from %s", v.From)
 
-					answer := fmt.Sprintf(
-						"<query xmlns=\"jabber:iq:last\" seconds=\"%d\" />",
-						time.Now().Unix()-lastActivity,
-					)
-
-					if id, err := talk.RawInformation(
-						v.To,
-						v.From,
-						v.ID,
-						xmpp.IQTypeResult,
-						answer,
-					); err != nil {
+					if id, err := talk.JabberIqLastResponse(v, lastActivity); err != nil {
 						err := fmt.Errorf(
 							"unable to send last activity time to jabber server: id=%s, err=%w",
 							id,
@@ -206,26 +183,18 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 					parseError = false
 
-				// Спрашивают список команд, чтобы поуправлять этим клиентом
+				// Спрашивают список команд, чтобы поуправлять этим клиентом (xep-0030)
 				case xmpp.XMPPNS_DISCO_ITEMS:
 					log.Infof("Got IQ get disco#items request from %s, answer service unavailable", v.From)
 
-					answer := "<query xmlns=\"http://jabber.org/protocol/disco#info\" "
-					answer += "node=\"http://jabber.org/protocol/commands\" />"
-					answer += "<error type=\"cancel\">" //nolint:goconst
-					answer += "<service-unavailable xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\" />"
-					answer += "</error>" //nolint:goconst
-
-					if id, err := talk.RawInformation(
-						v.To,
-						v.From,
-						v.ID,
-						xmpp.IQTypeError,
-						answer,
+					if _, err := talk.ErrorServiceUnavailable(
+						v,
+						"http://jabber.org/protocol/disco#info",
+						"http://jabber.org/protocol/commands",
 					); err != nil {
 						err := fmt.Errorf(
 							"unable to send disco#items to jabber server: id=%s, err=%w",
-							id,
+							v.ID,
 							err,
 						)
 
@@ -256,18 +225,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					case "urn:xmpp:time":
 						log.Infof("Got IQ get time request from %s", v.From)
 
-						answer := fmt.Sprintf(
-							"<time xmlns=\"urn:xmpp:time\"><tzo>+00:00</tzo><utc>%s</utc></time>",
-							time.Now().UTC().Format(time.RFC3339),
-						)
-
-						if id, err := talk.RawInformation(
-							v.To,
-							v.From,
-							v.ID,
-							xmpp.IQTypeResult,
-							answer,
-						); err != nil {
+						if id, err := talk.UrnXmppTimeResponse(v, "+00:00"); err != nil {
 							err := fmt.Errorf(
 								"unable to send urn:xmpp:time to jabber server: id=%s, err=%w",
 								id,
@@ -301,17 +259,10 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					case xmpp.XMPPNS_PUBSUB:
 						log.Infof("Got IQ get pubsub request from %s, answer feature unimplemented", v.From)
 
-						answer := "<error type=\"cancel\">"
-						answer += "<feature-not-implemented xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\" />"
-						answer += "<unsupported xmlns=\"http://jabber.org/protocol/pubsub#errors\" feature=\"subscribe\" />"
-						answer += "</error>"
-
-						if id, err := talk.RawInformation(
-							v.To,
-							v.From,
-							v.ID,
-							xmpp.IQTypeError,
-							answer,
+						if id, err := talk.ErrorNotImplemented(
+							v,
+							"http://jabber.org/protocol/pubsub#errors",
+							"subscribe",
 						); err != nil {
 							err := fmt.Errorf("unable to send pubsub feature unimplemented to jabber server: id=%s, err=%w",
 								id,
@@ -344,13 +295,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					log.Debugf("Got IQ get request (actually, response) for MUC Self-Ping from %s", v.From)
 
-					if id, err := talk.RawInformation(
-						v.To,
-						v.From,
-						v.ID,
-						xmpp.IQTypeResult,
-						"",
-					); err != nil {
+					if id, err := talk.PingResponse(v); err != nil {
 						err := fmt.Errorf(
 							"unable to send pong to jabber server: id=%s, err=%w",
 							id,
@@ -427,17 +372,10 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 			log.Info("Got an IQ request for set something. Answer not implemented")
 
-			answer := "<error type=\"cancel\">"
-			answer += "<feature-not-implemented xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\" />"
-			answer += "<unsupported xmlns=\"http://jabber.org/protocol/commands\" feature=\"set\" />"
-			answer += "</error>"
-
-			if id, err := talk.RawInformation(
-				v.To,
-				v.From,
-				v.ID,
-				xmpp.IQTypeError,
-				answer,
+			if id, err := talk.ErrorNotImplemented(
+				v,
+				"http://jabber.org/protocol/commands",
+				xmpp.IQTypeSet,
 			); err != nil {
 				err := fmt.Errorf(
 					"unable to send set feature unimplemented to jabber server: id=%s, err=%w",

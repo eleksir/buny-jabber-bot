@@ -31,3 +31,14 @@ func (c *Client) SendResultPing(id, toServer string) error {
 		xmlEscape(toServer), xmlEscape(id))
 	return err
 }
+
+// PingResponse responding to ping query according to xep-0199
+func (c *Client) PingResponse(v IQ) (string, error) {
+	return c.RawInformation(
+		v.To,
+		v.From,
+		v.ID,
+		IQTypeResult,
+		"",
+	)
+}

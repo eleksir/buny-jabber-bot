@@ -63,7 +63,7 @@ var serverPingTimestampTx int64
 // Время, когда был принят s2c pong.
 var serverPingTimestampRx int64
 
-// Объектик для хранения стейта утилизатора горутинок
+// Объектик для хранения стейта утилизатора горутинок.
 var gTomb tomb.Tomb
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */
