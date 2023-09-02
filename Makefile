@@ -6,8 +6,16 @@ all: clean build
 
 build:
 ifeq ($(OS),Windows_NT)
+# powershell
+ifeq ($(SHELL),sh.exe)
+	SET CGO_ENABLED=0
+	go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
+else
+# jetbrains golang
 	CGO_ENABLED=0
 	go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
+endif
+# bash/git bash
 else
 	CGO_ENABLED=0 go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
 endif
@@ -17,9 +25,15 @@ clean:
 
 upgrade:
 ifeq ($(OS),Windows_NT)
-	rmdir vendor /s /q
+# jetbrains golang, powershell
+ifeq ($(SHELL),sh.exe)
+	if exist vendor del /F /S /Q vendor >nul
+# git bash case
 else
-	rm -rf vendor
+	RM -r vendor
+endif
+else
+	RM -r vendor
 endif
 	go get -d -u -t ./...
 	go mod tidy

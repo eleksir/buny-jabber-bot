@@ -762,7 +762,7 @@ func probeMUCLiveness() { //nolint:gocognit
 							log.Debugf("Sending MUC ping from %s to %s", talk.JID(), room)
 
 							if err := talk.PingS2S(talk.JID(), room); err != nil {
-								err := fmt.Errorf("Unable to ping MUC %s: %v", room, err)
+								err := fmt.Errorf("unable to ping MUC %s: %w", room, err)
 								gTomb.Kill(err)
 							}
 						}(room)
@@ -838,7 +838,7 @@ func randomPhrase(list []string) string {
 }
 
 // interfaceToStringSlice превращает данный интерфейс в слайс строк.
-// Если может, конечно :)
+// Если может, конечно :) .
 func interfaceToStringSlice(iface interface{}) []string {
 	var mySlice []string
 

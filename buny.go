@@ -187,6 +187,7 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 								}
 
 								log.Debugf("Checking nick %s vs room %s blacklist regex %s", evilJid, room, nickRegexp)
+
 								if re.MatchString(evilNick) {
 									// Баним именно jid
 									if id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type); err != nil {
