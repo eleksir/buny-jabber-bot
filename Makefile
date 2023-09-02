@@ -1,18 +1,26 @@
 #!/usr/bin/env gmake -f
 
-CGO_ENABLED=0
 BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath -pgo=auto
 
 all: clean build
 
 build:
+ifeq ($(OS),Windows_NT)
+	CGO_ENABLED=0
 	go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
+else
+	CGO_ENABLED=0 go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
+endif
 
 clean:
 	go clean
 
 upgrade:
+ifeq ($(OS),Windows_NT)
+	rmdir vendor /s /q
+else
 	rm -rf vendor
+endif
 	go get -d -u -t ./...
 	go mod tidy
 	go mod vendor
