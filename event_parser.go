@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"sort"
@@ -490,7 +491,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// Однако, это не значит, что такую ситуацию мы не должны корректным образом обрабатывать.
 			if v.Type == "unavailable" {
 				// Считаем, что мы больше не в комнате, поэтому не знаем, кто там есть
-				roomPresencesJid.Delete(v.From)
+				roomPresences.Delete(v.From)
 
 				log.Error("Presence notification - looks like another instance of client leaves room")
 
@@ -530,34 +531,35 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			switch v.Role {
 			// Участник ушёл
 			case "none":
-				if namesInterface, present := roomPresencesJid.Get(room); present {
-					var newNames []string
-					names := interfaceToStringSlice(namesInterface)
+				if presenceJSONInterface, present := roomPresences.Get(room); present {
+					presenceJSONStrings := interfaceToStringSlice(presenceJSONInterface)
+					var newPresenceJSONStrings []string
 
-					for _, name := range names {
-						if name != v.JID {
-							newNames = append(newNames, name)
+					for _, presenceJSONstring := range presenceJSONStrings {
+						var p xmpp.Presence
+						_ = json.Unmarshal([]byte(presenceJSONstring), &p)
+
+						if p.JID == v.JID {
+							continue
 						}
+
+						newPresenceJSONStrings = append(newPresenceJSONStrings, presenceJSONstring)
 					}
 
-					if len(newNames) == 0 {
-						roomPresencesJid.Delete(room)
-					} else {
-						roomPresencesJid.Set(room, newNames)
-					}
+					roomPresences.Set(room, newPresenceJSONStrings)
 				}
 			// Участник пришёл
 			default:
-				var newNames []string
+				var presenceJSONStrings []string
+				var presenceJSONBytes []byte
 
-				if namesInterface, present := roomPresencesJid.Get(room); present {
-					names := interfaceToStringSlice(namesInterface)
-					names = append(names, v.JID)
-					roomPresencesJid.Set(room, names)
-				} else {
-					newNames = append(newNames, v.JID)
-					roomPresencesJid.Set(room, newNames)
+				if presenceJSONInterface, present := roomPresences.Get(room); present {
+					presenceJSONStrings = interfaceToStringSlice(presenceJSONInterface)
 				}
+
+				presenceJSONBytes, _ = json.Marshal(v)
+				presenceJSONStrings = append(presenceJSONStrings, string(presenceJSONBytes))
+				roomPresences.Set(room, presenceJSONStrings)
 			}
 
 			// Проверяем, а не злодей ли зашёл? Сделать это мы можем, только если мы находимся в комнате.

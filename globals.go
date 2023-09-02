@@ -66,7 +66,7 @@ var serverPingTimestampRx int64
 // Объектик для хранения стейта утилизатора горутинок.
 var gTomb tomb.Tomb
 
-// sync.Map-ка со списком участников конференций.
-var roomPresencesJid *Collection
+// sync.Map-ка со списком участников конференций (в json-формате, согласно структуре xmpp.Presence, "room".[]json).
+var roomPresences *Collection
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

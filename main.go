@@ -128,7 +128,7 @@ func myLoop() {
 			mucCapsList = NewCollection()
 			serverPingTimestampTx = 0
 			serverPingTimestampRx = 0
-			roomPresencesJid = NewCollection()
+			roomPresences = NewCollection()
 
 			// Установим коннект
 			establishConnection()

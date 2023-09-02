@@ -58,6 +58,7 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 		evilJid := strings.SplitN(v.JID, "/", 2)[0]
 		evilNick := ""
 		evilNicks := strings.SplitN(v.From, "/", 2)
+
 		// Давайте-ка похэндлим нонсенс - когда у нас в строке нету разделителя
 		if len(evilNicks) > 1 {
 			evilNick = evilNicks[1]
@@ -77,10 +78,12 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 							re, err := regexp.Compile(jidRegexp)
 
 							if err != nil {
-								log.Errorf("Incorrect regexp in blacklist: %s, skipping", jidRegexp)
+								log.Errorf("Incorrect regexp in global blacklist: %s, skipping", jidRegexp)
 
 								continue
 							}
+
+							log.Debugf("Checking jid %s vs global blacklist regex %s", evilJid, jidRegexp)
 
 							if re.MatchString(evilJid) {
 								if id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type); err != nil {
@@ -107,10 +110,12 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 							re, err := regexp.Compile(nickRegexp)
 
 							if err != nil {
-								log.Errorf("Incorrect regexp in blacklist: %s, skipping", nickRegexp)
+								log.Errorf("Incorrect regexp in global blacklist: %s, skipping", nickRegexp)
 
 								continue
 							}
+
+							log.Debugf("Checking nick %s vs global blacklist regex %s", evilNick, nickRegexp)
 
 							if re.MatchString(evilNick) {
 								// Баним именно jid
@@ -143,10 +148,12 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 							re, err := regexp.Compile(jidRegexp)
 
 							if err != nil {
-								log.Errorf("Incorrect regexp in blacklist: %s, skipping", jidRegexp)
+								log.Errorf("Incorrect regexp in room %s blacklist: %s, skipping", room, jidRegexp)
 
 								continue
 							}
+
+							log.Debugf("Checking jid %s vs room %s blacklist regex %s", evilJid, room, jidRegexp)
 
 							if re.MatchString(evilJid) {
 								if id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type); err != nil {
@@ -174,11 +181,12 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 								re, err := regexp.Compile(nickRegexp)
 
 								if err != nil {
-									log.Errorf("Incorrect regexp in blacklist: %s, skipping", nickRegexp)
+									log.Errorf("Incorrect regexp in room %s blacklist: %s, skipping", room, nickRegexp)
 
 									continue
 								}
 
+								log.Debugf("Checking nick %s vs room %s blacklist regex %s", evilJid, room, nickRegexp)
 								if re.MatchString(evilNick) {
 									// Баним именно jid
 									if id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type); err != nil {

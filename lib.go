@@ -583,28 +583,19 @@ func joinMuc(room string) {
 	go RotateStatus(room)
 
 	// Время прoверить участников на предмет злобности
-	namesInterface, present := roomPresencesJid.Get(room)
+	namesInterface, present := roomPresences.Get(room)
 
 	// Если room есть в списке presence-ов, то фигачим. room там должен быть, просто обязан.
 	if present {
 		for _, name := range interfaceToStringSlice(namesInterface) {
 			var v xmpp.Presence
-			v.From = name
-			v.To = fmt.Sprintf("%s/%s", room, config.Jabber.Nick)
-			v.ID = "fake_id"
-			v.JID = v.From
-			v.Affiliation = "member"
-			v.Role = "participant"
-			v.Priority = ""
-			v.Show = ""
-			v.Status = ""
 
+			_ = json.Unmarshal([]byte(name), &v)
+			log.Infof("Fake presence forged for %s just for on-enter check", name)
 			// Оно там внутри всё само обработает, если вдруг возникнет wire error, то зарекконетится.
 			_ = buny(v)
 		}
 	}
-
-	// TODO: тоже самое и для nick-ов
 }
 
 // probeServerLiveness проверяет живость соединения с сервером. Для многих серверов обязательная штука, без которой
@@ -719,8 +710,6 @@ func probeServerLiveness() { //nolint:gocognit
 
 // probeMUCLiveness Пингует MUC-и, нужно для проверки, что клиент ещё находится в MUC-е.
 func probeMUCLiveness() { //nolint:gocognit
-	defer gTomb.Done()
-
 	for {
 		select {
 		case <-gTomb.Dying():
@@ -773,6 +762,7 @@ func probeMUCLiveness() { //nolint:gocognit
 							log.Debugf("Sending MUC ping from %s to %s", talk.JID(), room)
 
 							if err := talk.PingS2S(talk.JID(), room); err != nil {
+								err := fmt.Errorf("Unable to ping MUC %s: %v", room, err)
 								gTomb.Kill(err)
 							}
 						}(room)
