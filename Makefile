@@ -1,7 +1,7 @@
 #!/usr/bin/env gmake -f
 
 CGO_ENABLED=0
-BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath
+BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath -pgo=auto
 
 all: clean build
 
