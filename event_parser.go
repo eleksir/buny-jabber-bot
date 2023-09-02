@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -488,6 +489,9 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// клиента забанят из-за спама "вошёл-вышел".
 			// Однако, это не значит, что такую ситуацию мы не должны корректным образом обрабатывать.
 			if v.Type == "unavailable" {
+				// Считаем, что мы больше не в комнате, поэтому не знаем, кто там есть
+				roomPresencesJid.Delete(v.From)
+
 				log.Error("Presence notification - looks like another instance of client leaves room")
 
 				if slices.Contains(roomsConnected, v.From) {
@@ -499,20 +503,72 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				log.Errorf(spew.Sdump(v))
 			}
 		} else {
-			log.Infof("Presence notification, Type: %s, From: %s, To: %s Show: %s, Status: %s, Affiliation: %s, Role: %s, JID: %s",
-				v.Type, v.From, v.To, v.Show, v.Status, v.Affiliation, v.Role, v.JID)
+			log.Infof(
+				"Presence notification, Type: %s, From: %s, To: %s Show: %s, Status: %s, Affiliation: %s, Role: %s, JID: %s",
+				v.Type, v.From, v.To, v.Show, v.Status, v.Affiliation, v.Role, v.JID,
+			)
+
+			room := strings.SplitN(v.From, "/", 2)[0]
+			nick := strings.SplitN(v.From, "/", 2)[1]
+
+			if nick == "" {
+				log.Infof("Presence stanza contains incorrect from attribute: %s", v.From)
+
+				return
+			}
 
 			// Это наш собственный Presence
 			if v.Show == "" && v.Status == "" {
-				if from := strings.Split(v.From, "/"); from[1] == config.Jabber.Nick {
-					roomsConnected = append(roomsConnected, from[0])
+				if nick == config.Jabber.Nick {
+					roomsConnected = append(roomsConnected, room)
+					// На всякий случай дедуплицируем список комнат, к которым мы заджойнились.
+					sort.Strings(roomsConnected)
+					slices.Compact(roomsConnected)
 				}
 			}
 
-			if err := buny(v); err != nil {
-				gTomb.Kill(err)
+			switch v.Role {
+			// Участник ушёл
+			case "none":
+				if namesInterface, present := roomPresencesJid.Get(room); present {
+					var newNames []string
+					names := interfaceToStringSlice(namesInterface)
 
-				return
+					for _, name := range names {
+						if name != v.JID {
+							newNames = append(newNames, name)
+						}
+					}
+
+					if len(newNames) == 0 {
+						roomPresencesJid.Delete(room)
+					} else {
+						roomPresencesJid.Set(room, newNames)
+					}
+				}
+			// Участник пришёл
+			default:
+				var newNames []string
+
+				if namesInterface, present := roomPresencesJid.Get(room); present {
+					names := interfaceToStringSlice(namesInterface)
+					names = append(names, v.JID)
+					roomPresencesJid.Set(room, names)
+				} else {
+					newNames = append(newNames, v.JID)
+					roomPresencesJid.Set(room, newNames)
+				}
+			}
+
+			// Проверяем, а не злодей ли зашёл? Сделать это мы можем, только если мы находимся в комнате.
+			// По правилам, мы можем что-то делать, только после того, как нам прилетит наш собственный presence, это
+			// значит, что мы вошли в комнату.
+			if slices.Contains(roomsConnected, room) {
+				if err := buny(v); err != nil {
+					gTomb.Kill(err)
+
+					return
+				}
 			}
 		}
 

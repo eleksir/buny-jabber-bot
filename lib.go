@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"reflect"
 	"syscall"
 	"time"
 
@@ -580,6 +581,30 @@ func joinMuc(room string) {
 	log.Infof("Joined to MUC: %s", room)
 
 	go RotateStatus(room)
+
+	// Время прoверить участников на предмет злобности
+	namesInterface, present := roomPresencesJid.Get(room)
+
+	// Если room есть в списке presence-ов, то фигачим. room там должен быть, просто обязан.
+	if present {
+		for _, name := range interfaceToStringSlice(namesInterface) {
+			var v xmpp.Presence
+			v.From = name
+			v.To = fmt.Sprintf("%s/%s", room, config.Jabber.Nick)
+			v.ID = "fake_id"
+			v.JID = v.From
+			v.Affiliation = "member"
+			v.Role = "participant"
+			v.Priority = ""
+			v.Show = ""
+			v.Status = ""
+
+			// Оно там внутри всё само обработает, если вдруг возникнет wire error, то зарекконетится.
+			_ = buny(v)
+		}
+	}
+
+	// TODO: тоже самое и для nick-ов
 }
 
 // probeServerLiveness проверяет живость соединения с сервером. Для многих серверов обязательная штука, без которой
@@ -820,6 +845,24 @@ func randomPhrase(list []string) string {
 	}
 
 	return phrase
+}
+
+// interfaceToStringSlice превращает данный интерфейс в слайс строк.
+// Если может, конечно :)
+func interfaceToStringSlice(iface interface{}) []string {
+	var mySlice []string
+
+	// А теперь мы начинаем дурдом, нам надо превратить ёбанный interface{} в []string
+	// Поскольку interface{} может быть чем угодно, перестрахуемся
+	if reflect.TypeOf(iface).Kind() == reflect.Slice {
+		shit := reflect.ValueOf(iface)
+
+		for i := 0; i < shit.Len(); i++ {
+			mySlice = append(mySlice, fmt.Sprint(shit.Index(i)))
+		}
+	}
+
+	return mySlice
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */
