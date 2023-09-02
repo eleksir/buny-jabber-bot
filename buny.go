@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// buny производит проверку по бело-чёрным спискам. Если presence пришёл от злодея (из чёрного списка), то отправляет
+// его в бан.
 func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 	var err error
 
