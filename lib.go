@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"syscall"
 	"time"
 
@@ -68,14 +70,19 @@ func sigHandler() {
 
 // readConfig читает и валидирует конфиг, а также выставляет некоторые default-ы, если значений для параметров в конфиге
 // нет.
-func readConfig() { //nolint:gocognit,gocyclo
-	configLoaded := false
-	executablePath, err := os.Executable()
+func readConfig() error { //nolint:gocognit,gocyclo
+	var (
+		err            error
+		executablePath string
+		configLoaded   = false
+	)
+
+	executablePath, err = os.Executable()
 
 	if err != nil {
-		log.Errorf("Unable to get current executable path: %s", err)
+		err := fmt.Errorf("unable to get current executable path: %w", err)
 
-		os.Exit(1)
+		return err
 	}
 
 	configJSONPath := fmt.Sprintf("%s/data/config.json", filepath.Dir(executablePath))
@@ -210,8 +217,7 @@ func readConfig() { //nolint:gocognit,gocyclo
 		}
 
 		if sampleConfig.Jabber.Nick == "" {
-			log.Errorf("Jabber nick is not defined in config, quitting")
-			os.Exit(1)
+			return errors.New("jabber nick is not defined in config, quitting") //nolint:goerr113
 		}
 
 		if sampleConfig.Jabber.Resource == "" {
@@ -227,13 +233,15 @@ func readConfig() { //nolint:gocognit,gocyclo
 		}
 
 		// Если sampleConfig.Jabber.Password не задан, то авторизации не будет
-		// Если sampleConfig.Jabber.Sasl не задан, то авторизация происходит через NickServ
 
-		// Если sampleConfig.Jabber.BanPhrasesEnable не задан, то он false
+		// Если не задано ни одного мастера, то бот сам себе мастер
+		if len(sampleConfig.Jabber.BotMasters) == 0 {
+			sampleConfig.Jabber.BotMasters[0] = sampleConfig.Jabber.User
+		}
 
-		// Если список фраз, с которыми банят пустой, то вносим в него одну позицию с пустой строкой
-		if len(sampleConfig.Jabber.BanPhrases) == 0 {
-			sampleConfig.Jabber.BanPhrases[0] = ""
+		// Нам бот нужен в каких-то чат-румах, а не "просто так"
+		if len(sampleConfig.Jabber.Channels) < 1 {
+			return errors.New("no jabber channels/rooms defined in config, quitting") //nolint:goerr113
 		}
 
 		// Если список фраз с которыми стартует бот пустой, вносим в него 1 запись с пустой строкой
@@ -249,10 +257,15 @@ func readConfig() { //nolint:gocognit,gocyclo
 		// Если sampleConfig.Jabber.RuntimeStatus.RotationTime не задан, то он равен 0
 		// Если sampleConfig.Jabber.RuntimeStatus.RotationSplayTime не задан, то он равен 0
 
-		// Нам бот нужен в каких-то чат-румах, а не "просто так"
-		if len(sampleConfig.Jabber.Channels) < 1 {
-			log.Errorf("No jabber channels/rooms defined in config, quitting")
-			os.Exit(1)
+		// Если sampleConfig.Jabber.BanPhrasesEnable не задан, то он false
+
+		// Если список фраз, с которыми банят пустой, то вносим в него одну позицию с пустой строкой
+		if len(sampleConfig.Jabber.BanPhrases) == 0 {
+			sampleConfig.Jabber.BanPhrases[0] = ""
+		}
+
+		if sampleConfig.CSign == "" {
+			sampleConfig.CSign = "!"
 		}
 
 		if sampleConfig.Loglevel == "" {
@@ -271,19 +284,26 @@ func readConfig() { //nolint:gocognit,gocyclo
 	}
 
 	if !configLoaded {
-		log.Error("Config was not loaded! Refusing to start.")
-		os.Exit(1)
+		return errors.New("config was not loaded!") //nolint:goerr113
 	}
+
+	return err //nolint:wrapcheck
 }
 
 // readWhitelist читает и валидирует белые списки пользователей.
-func readWhitelist() {
-	whitelistLoaded := false
-	executablePath, err := os.Executable()
+func readWhitelist() error {
+	var (
+		whitelistLoaded = false
+		err             error
+		executablePath  string
+	)
+
+	executablePath, err = os.Executable()
 
 	if err != nil {
-		log.Errorf("Unable to get current executable path: %s", err)
-		os.Exit(1)
+		err = fmt.Errorf("unable to get current executable path: %w", err)
+
+		return err
 	}
 
 	whitelistJSONPath := fmt.Sprintf("%s/data/whitelist.json", filepath.Dir(executablePath))
@@ -360,21 +380,26 @@ func readWhitelist() {
 	}
 
 	if !whitelistLoaded {
-		log.Error("Whitelist was not loaded! Refusing to start.")
-
-		os.Exit(1)
+		return errors.New("whitelist was not loaded!") //nolint:goerr113
 	}
+
+	return err
 }
 
 // readBlacklist читает и валидирует чёрные списки пользователей.
-func readBlacklist() {
-	blacklistLoaded := false
-	executablePath, err := os.Executable()
+func readBlacklist() error {
+	var (
+		blacklistLoaded = false
+		err             error
+		executablePath  string
+	)
+
+	executablePath, err = os.Executable()
 
 	if err != nil {
-		log.Errorf("Unable to get current executable path: %s", err)
+		err = fmt.Errorf("unable to get current executable path: %w", err)
 
-		os.Exit(1)
+		return err
 	}
 
 	whitelistJSONPath := fmt.Sprintf("%s/data/blacklist.json", filepath.Dir(executablePath))
@@ -451,10 +476,10 @@ func readBlacklist() {
 	}
 
 	if !blacklistLoaded {
-		log.Error("Blacklist was not loaded! Refusing to start.")
-
-		os.Exit(1)
+		return errors.New("blacklist was not loaded!")
 	}
+
+	return err
 }
 
 // establishConnection устанавливает соединение с jabber-сервером.
@@ -582,7 +607,7 @@ func joinMuc(room string) {
 
 	go RotateStatus(room)
 
-	// Время прoверить участников на предмет злобности
+	// Время проверить участников на предмет злобности
 	namesInterface, present := roomPresences.Get(room)
 
 	// Если room есть в списке presence-ов, то фигачим. room там должен быть, просто обязан.
@@ -853,6 +878,34 @@ func interfaceToStringSlice(iface interface{}) []string {
 	}
 
 	return mySlice
+}
+
+// getRealJIDfromNick достаёт из запомненных presence-ов по даденному nick-у real jid с resource-ом. Nick должен
+// содержать имя конфы, откуда участник.
+func getRealJIDfromNick(fullNick string) string {
+	var p xmpp.Presence
+
+	room := (strings.SplitN(fullNick, "/", 2))[0]
+
+	// Достанем presence участника
+	presenceJSONInterface, present := roomPresences.Get(room)
+
+	// Никого нет дома
+	if !present {
+		return ""
+	}
+
+	presenceJSONStrings := interfaceToStringSlice(presenceJSONInterface)
+
+	for _, presepresenceJSONString := range presenceJSONStrings {
+		_ = json.Unmarshal([]byte(presepresenceJSONString), &p)
+
+		if p.From == fullNick {
+			return p.JID
+		}
+	}
+
+	return ""
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

@@ -24,7 +24,11 @@ func init() {
 		TimestampFormat:        "2006-01-02 15:04:05",
 	})
 
-	readConfig()
+	if err := readConfig(); err != nil {
+		log.Error(err)
+
+		os.Exit(1)
+	}
 
 	// no panic
 	switch config.Loglevel {
@@ -67,8 +71,17 @@ func main() {
 	}
 
 	// Самое время вгрузить белые и чёрные списки, если что - получим ошибку в лог.
-	readWhitelist()
-	readBlacklist()
+	if err := readWhitelist(); err != nil {
+		log.Error(err)
+
+		os.Exit(1)
+	}
+
+	if err := readBlacklist(); err != nil {
+		log.Error(err)
+
+		os.Exit(1)
+	}
 
 	// github.com/mattn/go-xmpp пишет в stdio, нам этого не надо, ловим выхлоп его в logrus с уровнем trace
 	xmpp.DebugWriter = log.WithFields(log.Fields{"logger": "stdlib"}).WriterLevel(log.TraceLevel)

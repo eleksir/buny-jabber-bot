@@ -42,6 +42,12 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					return
 				}
 
+				if err := cmd(v); err != nil {
+					gTomb.Kill(err)
+
+					return
+				}
+
 				lastActivity = lastServerActivity
 
 				if muc, _ := strings.CutSuffix(v.Remote, "/"); muc != "" {
@@ -54,6 +60,12 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				//  slackware-current@conference.jabber.ru/eleksir - это если сообщение из публичного чятика
 				//  eleksir@jabber.ru/array.lan - это если мы работаем через ростер
 				log.Debugf("Private message: %s", v.Text)
+
+				if err := cmd(v); err != nil {
+					gTomb.Kill(err)
+
+					return
+				}
 
 				lastActivity = lastServerActivity
 
@@ -539,7 +551,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 						var p xmpp.Presence
 						_ = json.Unmarshal([]byte(presenceJSONstring), &p)
 
-						if p.JID == v.JID {
+						if p.From == v.From {
 							continue
 						}
 
@@ -551,15 +563,29 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// Участник пришёл
 			default:
 				var presenceJSONStrings []string
+				var newPresenceJSONStrings []string
 				var presenceJSONBytes []byte
 
 				if presenceJSONInterface, present := roomPresences.Get(room); present {
 					presenceJSONStrings = interfaceToStringSlice(presenceJSONInterface)
 				}
 
-				presenceJSONBytes, _ = json.Marshal(v)
-				presenceJSONStrings = append(presenceJSONStrings, string(presenceJSONBytes))
-				roomPresences.Set(room, presenceJSONStrings)
+				for _, presenceJSONString := range presenceJSONStrings {
+					var p xmpp.Presence
+					_ = json.Unmarshal([]byte(presenceJSONString), &p)
+
+					// Если находим, что у нас уже есть клиент с таким же From, то есть полным nick-ом (для grouchat)
+					// просто замещаем его.
+					if p.From == v.From {
+						continue
+					}
+
+					newPresenceJSONStrings = append(newPresenceJSONStrings, presenceJSONString)
+				}
+
+				presenceJSONBytes, _ = json.Marshal(v) //nolint:errchkjson
+				newPresenceJSONStrings = append(newPresenceJSONStrings, string(presenceJSONBytes))
+				roomPresences.Set(room, newPresenceJSONStrings)
 			}
 
 			// Проверяем, а не злодей ли зашёл? Сделать это мы можем, только если мы находимся в комнате.

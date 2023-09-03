@@ -1,6 +1,7 @@
 #!/usr/bin/env gmake -f
 
 BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath -pgo=auto
+FILELIST=collection.go types.go globals.go lib.go event_parser.go buny.go commands.go main.go
 
 all: clean build
 
@@ -9,15 +10,15 @@ ifeq ($(OS),Windows_NT)
 # powershell
 ifeq ($(SHELL),sh.exe)
 	SET CGO_ENABLED=0
-	go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
+	go build ${BUILDOPTS} -o "buny-jabber-bot" ${FILELIST}
 else
 # jetbrains golang
 	CGO_ENABLED=0
-	go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
+	go build ${BUILDOPTS} -o "buny-jabber-bot" ${FILELIST}
 endif
 # bash/git bash
 else
-	CGO_ENABLED=0 go build ${BUILDOPTS} -o "buny-jabber-bot" collection.go types.go globals.go lib.go event_parser.go buny.go main.go
+	CGO_ENABLED=0 go build ${BUILDOPTS} -o "buny-jabber-bot" ${FILELIST}
 endif
 
 clean:

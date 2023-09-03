@@ -23,6 +23,7 @@ type myConfig struct {
 		Resource                     string   `json:"resource,omitempty"`
 		User                         string   `json:"user,omitempty"`
 		Password                     string   `json:"password,omitempty"`
+		BotMasters                   []string `json:"bot_masters"`
 		Channels                     []string `json:"channels"`
 		StartupStatus                []string `json:"startup_status,omitempty"`
 		RuntimeStatus                struct {
@@ -34,6 +35,7 @@ type myConfig struct {
 		BanPhrases       []string `json:"ban_phrases,omitempty"`
 	} `json:"jabber,omitempty"`
 
+	CSign    string `json:"csign,omitempty"`
 	Loglevel string `json:"loglevel,omitempty"`
 	Log      string `json:"log,omitempty"`
 }
