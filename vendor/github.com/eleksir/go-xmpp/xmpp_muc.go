@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 
 // TODO(flo):
-//   - support password protected MUC rooms
 //   - cleanup signatures of join/leave functions
 package xmpp
 
@@ -23,16 +22,18 @@ const (
 	SinceHistory   = 4
 )
 
-// Send sends room topic wrapped inside an XMPP message stanza body.
-func (c *Client) SendTopic(chat Chat) (n int, err error) {
+// SendTopic sends room topic wrapped inside an XMPP message stanza body.
+func (c *Client) SendTopic(chat Chat) (int, error) {
 	return fmt.Fprintf(StanzaWriter, "<message to='%s' type='%s' xml:lang='en'>"+"<subject>%s</subject></message>",
 		xmlEscape(chat.Remote), xmlEscape(chat.Type), xmlEscape(chat.Text))
 }
 
-func (c *Client) JoinMUCNoHistory(jid, nick string) (n int, err error) {
+// JoinMUCNoHistory joins room and instructs server that no history data required.
+func (c *Client) JoinMUCNoHistory(jid, nick string) (int, error) {
 	if nick == "" {
 		nick = c.jid
 	}
+
 	return fmt.Fprintf(StanzaWriter, "<presence to='%s/%s'>\n"+
 		"<x xmlns='%s'>"+
 		"<history maxchars='0'/></x>\n"+
@@ -40,12 +41,13 @@ func (c *Client) JoinMUCNoHistory(jid, nick string) (n int, err error) {
 		xmlEscape(jid), xmlEscape(nick), nsMUC)
 }
 
-// xep-0045 7.2
-func (c *Client) JoinMUC(jid, nick string, history_type, history int, history_date *time.Time) (n int, err error) {
+// JoinMUC joins room, xep-0045 7.2.
+func (c *Client) JoinMUC(jid, nick string, historyType, history int, historyDate *time.Time) (int, error) {
 	if nick == "" {
 		nick = c.jid
 	}
-	switch history_type {
+
+	switch historyType {
 	case NoHistory:
 		return fmt.Fprintf(StanzaWriter, "<presence to='%s/%s'>\n"+
 			"<x xmlns='%s' />\n"+
@@ -70,23 +72,25 @@ func (c *Client) JoinMUC(jid, nick string, history_type, history int, history_da
 			"</presence>",
 			xmlEscape(jid), xmlEscape(nick), nsMUC, history)
 	case SinceHistory:
-		if history_date != nil {
+		if historyDate != nil {
 			return fmt.Fprintf(StanzaWriter, "<presence to='%s/%s'>\n"+
 				"<x xmlns='%s'>\n"+
 				"<history since='%s'/></x>\n"+
 				"</presence>",
-				xmlEscape(jid), xmlEscape(nick), nsMUC, history_date.Format(time.RFC3339))
+				xmlEscape(jid), xmlEscape(nick), nsMUC, historyDate.Format(time.RFC3339))
 		}
 	}
-	return 0, errors.New("Unknown history option")
+
+	return 0, errors.New("unknown history option")
 }
 
-// xep-0045 7.2.6
-func (c *Client) JoinProtectedMUC(jid, nick string, password string, history_type, history int, history_date *time.Time) (n int, err error) {
+// JoinProtectedMUC joins password protected room, xep-0045 7.2.6.
+func (c *Client) JoinProtectedMUC(jid, nick string, password string, historyType, history int, historyDate *time.Time) (int, error) {
 	if nick == "" {
 		nick = c.jid
 	}
-	switch history_type {
+
+	switch historyType {
 	case NoHistory:
 		return fmt.Fprintf(StanzaWriter, "<presence to='%s/%s'>\n"+
 			"<x xmlns='%s'>\n"+
@@ -116,20 +120,21 @@ func (c *Client) JoinProtectedMUC(jid, nick string, password string, history_typ
 			"</presence>",
 			xmlEscape(jid), xmlEscape(nick), nsMUC, xmlEscape(password), history)
 	case SinceHistory:
-		if history_date != nil {
+		if historyDate != nil {
 			return fmt.Fprintf(StanzaWriter, "<presence to='%s/%s'>\n"+
 				"<x xmlns='%s'>\n"+
 				"<password>%s</password>\n"+
 				"<history since='%s'/></x>\n"+
 				"</presence>",
-				xmlEscape(jid), xmlEscape(nick), nsMUC, xmlEscape(password), history_date.Format(time.RFC3339))
+				xmlEscape(jid), xmlEscape(nick), nsMUC, xmlEscape(password), historyDate.Format(time.RFC3339))
 		}
 	}
-	return 0, errors.New("Unknown history option")
+
+	return 0, errors.New("unknown history option")
 }
 
-// xep-0045 7.14
-func (c *Client) LeaveMUC(jid string) (n int, err error) {
+// LeaveMUC quits from room xep-0045 7.14.
+func (c *Client) LeaveMUC(jid string) (int, error) {
 	return fmt.Fprintf(StanzaWriter, "<presence from='%s' to='%s' type='unavailable' />",
 		c.jid, xmlEscape(jid))
 }

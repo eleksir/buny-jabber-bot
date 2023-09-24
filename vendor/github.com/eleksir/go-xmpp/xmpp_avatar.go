@@ -1,7 +1,7 @@
 package xmpp
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // go fuck yourself, gosec. You don't even fucking read rfc. So shout the fuck up.
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	XMPPNS_AVATAR_PEP_DATA     = "urn:xmpp:avatar:data"
-	XMPPNS_AVATAR_PEP_METADATA = "urn:xmpp:avatar:metadata"
+	XMPPNS_AVATAR_PEP_DATA     = "urn:xmpp:avatar:data"     //nocritic:revive
+	XMPPNS_AVATAR_PEP_METADATA = "urn:xmpp:avatar:metadata" //nocritic:revive
 )
 
 type clientAvatarData struct {
@@ -52,8 +52,8 @@ type AvatarMetadata struct {
 
 func handleAvatarData(itemsBody []byte, from, id string) (AvatarData, error) {
 	var data clientAvatarData
-	err := xml.Unmarshal(itemsBody, &data)
-	if err != nil {
+
+	if err := xml.Unmarshal(itemsBody, &data); err != nil {
 		return AvatarData{}, err
 	}
 
@@ -64,8 +64,9 @@ func handleAvatarData(itemsBody []byte, from, id string) (AvatarData, error) {
 		return AvatarData{}, err
 	}
 
-	hash := sha1.Sum(dataRaw)
+	hash := sha1.Sum(dataRaw) //nolint:gosec // go fuck yourself, gosec. This exact mechanics described in standard.
 	hashStr := hex.EncodeToString(hash[:])
+
 	if hashStr != id {
 		return AvatarData{}, errors.New("SHA1 hashes do not match")
 	}
@@ -77,9 +78,12 @@ func handleAvatarData(itemsBody []byte, from, id string) (AvatarData, error) {
 }
 
 func handleAvatarMetadata(body []byte, from string) (AvatarMetadata, error) {
-	var meta clientAvatarMetadata
-	err := xml.Unmarshal(body, &meta)
-	if err != nil {
+	var (
+		meta clientAvatarMetadata
+		err  error
+	)
+
+	if err = xml.Unmarshal(body, &meta); err != nil {
 		return AvatarMetadata{}, err
 	}
 
@@ -91,10 +95,10 @@ func handleAvatarMetadata(body []byte, from string) (AvatarMetadata, error) {
 		ID:     meta.Info.ID,
 		Type:   meta.Info.Type,
 		URL:    meta.Info.URL,
-	}, nil
+	}, err
 }
 
-// A wrapper for atoi which just returns -1 if an error occurs
+// atoiw is a wrapper for atoi which just returns -1 if an error occurs.
 func atoiw(str string) int {
 	i, err := strconv.Atoi(str)
 	if err != nil {
@@ -104,22 +108,22 @@ func atoiw(str string) int {
 	return i
 }
 
-func (c *Client) AvatarSubscribeMetadata(jid string) {
-	c.PubsubSubscribeNode(XMPPNS_AVATAR_PEP_METADATA, jid)
+func (c *Client) AvatarSubscribeMetadata(jid string) (string, error) {
+	return c.PubsubSubscribeNode(XMPPNS_AVATAR_PEP_METADATA, jid)
 }
 
-func (c *Client) AvatarUnsubscribeMetadata(jid string) {
-	c.PubsubUnsubscribeNode(XMPPNS_AVATAR_PEP_METADATA, jid)
+func (c *Client) AvatarUnsubscribeMetadata(jid string) (string, error) {
+	return c.PubsubUnsubscribeNode(XMPPNS_AVATAR_PEP_METADATA, jid)
 }
 
-func (c *Client) AvatarRequestData(jid string) {
-	c.PubsubRequestLastItems(XMPPNS_AVATAR_PEP_DATA, jid)
+func (c *Client) AvatarRequestData(jid string) (string, error) {
+	return c.PubsubRequestLastItems(XMPPNS_AVATAR_PEP_DATA, jid)
 }
 
-func (c *Client) AvatarRequestDataByID(jid, id string) {
-	c.PubsubRequestItem(XMPPNS_AVATAR_PEP_DATA, jid, id)
+func (c *Client) AvatarRequestDataByID(jid, id string) (string, error) {
+	return c.PubsubRequestItem(XMPPNS_AVATAR_PEP_DATA, jid, id)
 }
 
-func (c *Client) AvatarRequestMetadata(jid string) {
-	c.PubsubRequestLastItems(XMPPNS_AVATAR_PEP_METADATA, jid)
+func (c *Client) AvatarRequestMetadata(jid string) (string, error) {
+	return c.PubsubRequestLastItems(XMPPNS_AVATAR_PEP_METADATA, jid)
 }

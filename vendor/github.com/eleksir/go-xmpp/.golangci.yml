@@ -1,0 +1,66 @@
+run:
+  tests: false
+  skip-dirs:
+    - _example
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+  go: '1.21'
+output:
+  sort-results: true
+linters-settings:
+  gosec:
+    excludes:
+      # Оно не используется для повышения безопасности или каких-то таких секъюрых вещей, оно используется для выборки
+      # произвольного элемента из массива, так что ИДИ НАХУЙ с этой проверкой и не еби мозги липовой безопасностью.
+      - G404 # Insecure random number source (rand)
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - asasalint
+    - asciicheck
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - decorder
+    - durationcheck
+    - errchkjson
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - gci
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gocritic
+    - godot
+    - gofmt
+    - goimports
+    - gosec
+    - gosmopolitan
+    - grouper
+    - importas
+    - ireturn
+    - makezero
+    - mirror
+    - nakedret
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - predeclared
+    - promlinter
+    - reassign
+    - revive
+    - rowserrcheck
+    - stylecheck
+    - unconvert
+    - wastedassign
+    - whitespace
+    - wsl

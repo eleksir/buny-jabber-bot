@@ -239,7 +239,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					case "urn:xmpp:time":
 						log.Infof("Got IQ get time request from %s", v.From)
 
-						if id, err := talk.UrnXmppTimeResponse(v, "+00:00"); err != nil {
+						if id, err := talk.UrnXMPPTimeResponse(v, "+00:00"); err != nil {
 							err := fmt.Errorf(
 								"unable to send urn:xmpp:time to jabber server: id=%s, err=%w",
 								id,

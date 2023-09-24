@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	XMPPNS_DISCO_ITEMS = "http://jabber.org/protocol/disco#items"
-	XMPPNS_DISCO_INFO  = "http://jabber.org/protocol/disco#info"
+	XMPPNS_DISCO_ITEMS = "http://jabber.org/protocol/disco#items" //nocritic:revive
+	XMPPNS_DISCO_INFO  = "http://jabber.org/protocol/disco#info"  //nocritic:revive
 )
 
 type clientDiscoFeature struct {
@@ -90,6 +90,7 @@ func clientIdentitiesToReturn(identities []clientDiscoIdentity) []DiscoIdentity 
 
 func clientDiscoItemsToReturn(items []clientDiscoItem) []DiscoItem {
 	var ret []DiscoItem
+
 	for _, item := range items {
 		ret = append(ret, DiscoItem{
 			Jid:  item.Jid,

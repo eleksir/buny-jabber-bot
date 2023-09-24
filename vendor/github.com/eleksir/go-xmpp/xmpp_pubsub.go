@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	XMPPNS_PUBSUB       = "http://jabber.org/protocol/pubsub"
-	XMPPNS_PUBSUB_EVENT = "http://jabber.org/protocol/pubsub#event"
+	XMPPNS_PUBSUB       = "http://jabber.org/protocol/pubsub"       //nolint:revive
+	XMPPNS_PUBSUB_EVENT = "http://jabber.org/protocol/pubsub#event" //nolint:revive
 )
 
 type clientPubsubItem struct {
@@ -67,7 +67,7 @@ type PubsubItems struct {
 	Items []PubsubItem
 }
 
-// Converts []clientPubsubItem to []PubsubItem
+// Converts []clientPubsubItem to []PubsubItem.
 func pubsubItemsToReturn(items []clientPubsubItem) []PubsubItem {
 	var tmp []PubsubItem
 	for _, i := range items {
@@ -96,6 +96,7 @@ func pubsubSubscriptionStanza(node, jid string) string {
 	body := fmt.Sprintf("<subscribe node='%s' jid='%s'/>",
 		xmlEscape(node),
 		xmlEscape(jid))
+
 	return pubsubStanza(body)
 }
 
@@ -103,6 +104,7 @@ func pubsubUnsubscriptionStanza(node, jid string) string {
 	body := fmt.Sprintf("<unsubscribe node='%s' jid='%s'/>",
 		xmlEscape(node),
 		xmlEscape(jid))
+
 	return pubsubStanza(body)
 }
 
@@ -124,10 +126,12 @@ func (c *Client) PubsubUnsubscribeNode(node, jid string) (string, error) {
 
 func (c *Client) PubsubRequestLastItems(node, jid string) (string, error) {
 	body := fmt.Sprintf("<items node='%s'/>", node)
+
 	return c.RawInformation(c.jid, jid, "items1", "get", pubsubStanza(body))
 }
 
 func (c *Client) PubsubRequestItem(node, jid, id string) (string, error) {
 	body := fmt.Sprintf("<items node='%s'><item id='%s'/></items>", node, id)
+
 	return c.RawInformation(c.jid, jid, "items3", "get", pubsubStanza(body))
 }
