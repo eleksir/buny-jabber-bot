@@ -636,10 +636,12 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// По правилам, мы можем что-то делать, только после того, как нам прилетит наш собственный presence, это
 			// значит, что мы вошли в комнату.
 			if slices.Contains(roomsConnected, room) {
-				if err := bunyPresense(v); err != nil {
-					gTomb.Kill(err)
+				if v.Affiliation != "outcast" {
+					if err := bunyPresense(v); err != nil {
+						gTomb.Kill(err)
 
-					return
+						return
+					}
 				}
 			}
 		}
