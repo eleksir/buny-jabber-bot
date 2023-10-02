@@ -1,0 +1,20 @@
+#!/sbin/openrc-run
+
+name="$SVCNAME"
+command="/var/lib/$SVCNAME/$SVCNAME"
+supervisor="supervise-daemon"
+pidfile="/run/$SVCNAME/$SVCNAME.pid"
+command_user=nobody:nogroup
+
+depend() {
+	need net redis
+	use dns
+	after redis
+}
+
+start_pre() {
+	mkdir -p /var/log/$SVCNAME
+	chown -R nobody:nogroup /var/log/$SVCNAME
+	mkdir -p /run/$SVCNAME
+	chown -R nobody:nogroup /run/$SVCNAME
+}
