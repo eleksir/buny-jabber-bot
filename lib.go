@@ -257,6 +257,7 @@ func readConfig() error { //nolint:gocognit,gocyclo
 		// Если sampleConfig.Jabber.RuntimeStatus.RotationTime не задан, то он равен 0
 		// Если sampleConfig.Jabber.RuntimeStatus.RotationSplayTime не задан, то он равен 0
 
+		// Если sampleConfig.Jabber.BanDelay не задан, то он равен 0
 		// Если sampleConfig.Jabber.BanPhrasesEnable не задан, то он false
 
 		// Если список фраз, с которыми банят пустой, то вносим в него одну позицию с пустой строкой

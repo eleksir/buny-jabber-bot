@@ -31,6 +31,7 @@ type myConfig struct {
 			RotationTime      int64    `json:"rotation_time,omitempty"`
 			RotationSplayTime int64    `json:"rotation_splay_time,omitempty"`
 		} `json:"runtime_status,omitempty"`
+		BanDelay         int64    `json:"ban_delay,omitempty"`
 		BanPhrasesEnable bool     `json:"ban_phrases_enable,omitempty"`
 		BanPhrases       []string `json:"ban_phrases,omitempty"`
 	} `json:"jabber,omitempty"`
