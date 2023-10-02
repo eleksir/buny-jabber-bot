@@ -56,6 +56,7 @@ type myBlackList struct {
 		ReasonEnable bool     `json:"reason_enable,omitempty"`
 		JidRe        []string `json:"jid_re,omitempty"`
 		NickRe       []string `json:"nick_re,omitempty"`
+		PhraseRe     []string `json:"phrase_re,omitempty"`
 	} `json:"blacklist,omitempty"`
 }
 

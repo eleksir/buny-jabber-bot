@@ -3,9 +3,11 @@
 		{
 			# Пустой список означает глобальные баны, которые применяются ко всем комнатам, где присутствует бот
 			"room_name": "",
+
 			# Записывать ли в reason в банлисте комнаты сообщение вида autoban at yyyy.MM.dd hh:mm:ss
 			# Если не задано, то false
 			"reason_enable": false,
+
 			# Список регулярок JID-ов, которых надо банить
 			"jid_re": [
 				"^[Mm]ary@server.tld/resource1$",
@@ -13,11 +15,17 @@
 				"^(his|her)_cat@sweet.home/.*$",
 				"^(her|his)_dog@.*\\.street/.*"
 			],
+
 			# Список регулярок nick-ов злодеев
 			"nick_re": [
 				"^(Annoying_)?[F|f]ly$",
 				"^Buzzing_Wasp$"
-			]
+			],
+
+	        # Список регулярок, запрещённых к упоминанию в чяте
+	        "phrase_re": [
+		        "^Exterminate.$"
+	        ]
 		}
 	]
 }

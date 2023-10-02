@@ -11,9 +11,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// buny производит проверку по бело-чёрным спискам. Если presence пришёл от злодея (из чёрного списка), то отправляет
-// его в бан.
-func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
+// bunyPresense производит проверку по бело-чёрным спискам. Если presence пришёл от злодея (из чёрного списка), то
+// отправляет его в бан.
+func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 	var err error
 
 	// Если у presence-а есть JID и presence из одной из комнат, в которой мы есть и если его домен в чёрном
@@ -211,6 +211,97 @@ func buny(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 					}
 				}
 			}
+		}
+	}
+
+	return err
+}
+
+// bunyChat проиводит проверку сообщений участников чата по списку забаненных фраз и в случае нахождения запрещённого
+// шаблона банит участника чата.
+func bunyChat(v xmpp.Chat) error {
+	var (
+		room = (strings.SplitN(v.Remote, "/", 2))[0]
+		// :wq
+		// nick = (strings.SplitN(v.Remote, "/", 2))[1]
+		err error
+	)
+
+	for _, cRoom := range roomsConnected {
+		if cRoom == room {
+			for _, bEntry := range blackList.Blacklist {
+				// Обработаем правила глобального чёрного списка
+				if bEntry.RoomName == "" {
+					for _, phraseRegexp := range bEntry.PhraseRe {
+						if phraseRegexp == "" {
+							continue
+						}
+
+						re, err := regexp.Compile(phraseRegexp)
+
+						if err != nil {
+							log.Errorf("Incorrect regexp in room %s blacklist: %s, skipping", room, phraseRegexp)
+
+							continue
+						}
+
+						log.Debugf("Checking phrase %s vs room %s blacklist regex %s", v.Text, room, phraseRegexp)
+
+						if re.MatchString(v.Text) {
+							if id, err := squash(room, getRealJIDfromNick(v.Remote), bEntry.ReasonEnable, v.Type); err != nil {
+								err := fmt.Errorf(
+									"unable to ban user: id=%s, err=%w",
+									id,
+									err,
+								)
+
+								gTomb.Kill(err)
+
+								continue
+							}
+
+							return err
+						}
+					}
+				}
+
+				// Обработаем правила чёрного списка для конкретной комнаты
+				if bEntry.RoomName == room {
+					for _, phraseRegexp := range bEntry.PhraseRe {
+						if phraseRegexp == "" {
+							continue
+						}
+
+						re, err := regexp.Compile(phraseRegexp)
+
+						if err != nil {
+							log.Errorf("Incorrect regexp in room %s blacklist: %s, skipping", room, phraseRegexp)
+
+							continue
+						}
+
+						log.Debugf("Checking phrase %s vs room %s blacklist regex %s", v.Text, room, phraseRegexp)
+
+						if re.MatchString(v.Text) {
+							if id, err := squash(room, getRealJIDfromNick(v.Remote), bEntry.ReasonEnable, v.Type); err != nil {
+								err := fmt.Errorf(
+									"unable to ban user: id=%s, err=%w",
+									id,
+									err,
+								)
+
+								gTomb.Kill(err)
+
+								continue
+							}
+
+							return err
+						}
+					}
+				}
+			}
+
+			break
 		}
 	}
 

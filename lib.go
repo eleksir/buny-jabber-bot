@@ -88,9 +88,9 @@ func readConfig() error { //nolint:gocognit,gocyclo
 	configJSONPath := fmt.Sprintf("%s/data/config.json", filepath.Dir(executablePath))
 
 	locations := []string{
-		"~/.buny-jabber-bot.json",
-		"~/buny-jabber-bot.json",
-		"/etc/buny-jabber-bot.json",
+		"~/.bunyPresense-jabber-bot.json",
+		"~/bunyPresense-jabber-bot.json",
+		"/etc/bunyPresense-jabber-bot.json",
 		configJSONPath,
 	}
 
@@ -221,9 +221,9 @@ func readConfig() error { //nolint:gocognit,gocyclo
 		}
 
 		if sampleConfig.Jabber.Resource == "" {
-			sampleConfig.Jabber.Resource = "buny bot"
+			sampleConfig.Jabber.Resource = "bunyPresense bot"
 
-			log.Info("Jabber resource not defined in config, using buny bot")
+			log.Info("Jabber resource not defined in config, using bunyPresense bot")
 		}
 
 		if sampleConfig.Jabber.User == "" {
@@ -309,9 +309,9 @@ func readWhitelist() error {
 	whitelistJSONPath := fmt.Sprintf("%s/data/whitelist.json", filepath.Dir(executablePath))
 
 	locations := []string{
-		"~/.buny-jabber-bot-whitelist.json",
-		"~/buny-jabber-bot-whitelist.json",
-		"/etc/buny-jabber-bot-whitelist.json",
+		"~/.bunyPresense-jabber-bot-whitelist.json",
+		"~/bunyPresense-jabber-bot-whitelist.json",
+		"/etc/bunyPresense-jabber-bot-whitelist.json",
 		whitelistJSONPath,
 	}
 
@@ -405,9 +405,9 @@ func readBlacklist() error {
 	whitelistJSONPath := fmt.Sprintf("%s/data/blacklist.json", filepath.Dir(executablePath))
 
 	locations := []string{
-		"~/.buny-jabber-bot-blacklist.json",
-		"~/buny-jabber-bot-blacklist.json",
-		"/etc/buny-jabber-bot-blacklist.json",
+		"~/.bunyPresense-jabber-bot-blacklist.json",
+		"~/bunyPresense-jabber-bot-blacklist.json",
+		"/etc/bunyPresense-jabber-bot-blacklist.json",
 		whitelistJSONPath,
 	}
 
@@ -618,7 +618,7 @@ func joinMuc(room string) {
 			_ = json.Unmarshal([]byte(name), &v)
 			log.Infof("Fake presence forged for %s just for on-enter check", name)
 			// Оно там внутри всё само обработает, если вдруг возникнет wire error, то зарекконетится.
-			_ = buny(v)
+			_ = bunyPresense(v)
 		}
 	}
 }

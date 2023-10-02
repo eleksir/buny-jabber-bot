@@ -33,7 +33,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// Групповой чятик
 			case "groupchat":
 				log.Debugf("Message from public chat: %s", v.Text)
-				// dest := strings.SplitN(v.Remote, "/", 2)[0]
+				// room := strings.SplitN(v.Remote, "/", 2)[0]
 				nick := strings.SplitN(v.Remote, "/", 2)[1]
 
 				if nick == config.Jabber.Nick {
@@ -43,6 +43,12 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				}
 
 				if err := cmd(v); err != nil {
+					gTomb.Kill(err)
+
+					return
+				}
+
+				if err := bunyChat(v); err != nil {
 					gTomb.Kill(err)
 
 					return
@@ -111,7 +117,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 					if id, err := talk.IqVersionResponse(
 						v,
-						"buny-jabber-bot",
+						"bunyPresense-jabber-bot",
 						"1.с_чем-то",
 						"линупс",
 					); err != nil {
@@ -592,7 +598,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// По правилам, мы можем что-то делать, только после того, как нам прилетит наш собственный presence, это
 			// значит, что мы вошли в комнату.
 			if slices.Contains(roomsConnected, room) {
-				if err := buny(v); err != nil {
+				if err := bunyPresense(v); err != nil {
 					gTomb.Kill(err)
 
 					return
