@@ -377,6 +377,44 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 						log.Debug(spew.Sdump(e))
 					}
 				}
+
+			// Подтверждение бана
+			case v.To == talk.JID() && v.ID == "ban1":
+				mucNickMatch := false
+
+				for _, room := range roomsConnected {
+					mucNick := fmt.Sprintf("%s/%s", room, config.Jabber.Nick)
+
+					if v.From == mucNick {
+						mucNickMatch = true
+
+						break
+					}
+				}
+
+				// Формально, ответ должен парситься как пустой result и совпадать с типом jabberSimpleIqGetQuery
+				// Ответ приходит с 2 xmlns, похоже, он парсится неправильно в go-xmpp.
+				// TODO: после исправления go-xmpp, надо исправить это тут
+				var iqStruct jabberSimpleIqGetQuery
+
+				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
+					if iqStruct.Xmlns == "http://jabber.org/protocol/muc#admin" && iqStruct.Text == "" {
+						if mucNickMatch {
+							// Поскольку никакой логики у нас на этот счёт не предусмотрено, то просто пропускаем ответ
+							log.Infof("Got ban successful from %s to %s", v.From, v.To)
+						} else {
+							log.Infof("Got ban successful from %s to %s, from room we are not in", v.From, v.To)
+							log.Debug(spew.Sdump(e))
+						}
+					} else {
+						log.Infof("Got strange ban successful message from %s to %s", v.From, v.To)
+						log.Debug(spew.Sdump(e))
+					}
+				} else {
+					log.Infof("Got strange ban successful message from %s to %s", v.From, v.To)
+					log.Debug(spew.Sdump(e))
+				}
+
 			default:
 				log.Info("Got an IQ result. Dunno how deal with it, discarding")
 				log.Debug(spew.Sdump(e))
