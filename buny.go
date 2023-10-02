@@ -356,6 +356,10 @@ func squash(room, jid string, reasonEnable bool, vType string) (string, error) {
 
 	ban += "</item>"
 
+	// Выжидаем 0.3 секунды перед баном. А то можно настолько рано забанить, что сервер не внсёт злодея в банлист
+	// комнаты и пришлёт affiliation: none вместо affiliation: outcast. Надеюсь, этого будет хватать.
+	time.Sleep(333 * time.Millisecond)
+
 	if id, err = talk.RawInformationQuery(
 		talk.JID(),
 		room,
