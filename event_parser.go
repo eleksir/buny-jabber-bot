@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -117,9 +118,9 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 					if id, err := talk.IqVersionResponse(
 						v,
-						"bunyPresense-jabber-bot",
-						"1.с_чем-то",
-						"линупс",
+						"buny-jabber-bot",
+						"1.dev",
+						(strings.SplitN(runtime.GOOS, "/", 2))[0],
 					); err != nil {
 						err := fmt.Errorf(
 							"unable to send version info to jabber server: id=%s, err=%w",
