@@ -509,6 +509,8 @@ func establishConnection() {
 		log.Errorf("Try to send initial KeepAlive, got error: %s", err)
 
 		gTomb.Kill(err)
+
+		return
 	}
 
 	log.Info("Connected")
@@ -544,6 +546,8 @@ func joinMuc(room string) {
 		log.Infof("Unable to send disco#info to MUC %s: %s", room, err)
 
 		gTomb.Kill(err)
+
+		return
 	}
 
 	// Ждём, пока muc нам вернёт список фичей.
@@ -576,6 +580,8 @@ func joinMuc(room string) {
 		log.Errorf("Unable to join to MUC: %s", room)
 
 		gTomb.Kill(err)
+
+		return
 	}
 
 	log.Infof("Joining to MUC: %s", room)
@@ -684,7 +690,7 @@ func probeServerLiveness() { //nolint:gocognit
 
 								gTomb.Kill(err)
 
-								continue
+								return
 
 							// По-умолчанию, мы отправляем c2s пинг
 							default:
@@ -693,7 +699,7 @@ func probeServerLiveness() { //nolint:gocognit
 								if err := talk.PingC2S(talk.JID(), config.Jabber.Server); err != nil {
 									gTomb.Kill(err)
 
-									continue
+									return
 								}
 
 								serverPingTimestampTx = time.Now().Unix()
@@ -704,7 +710,7 @@ func probeServerLiveness() { //nolint:gocognit
 							if err := talk.PingC2S(talk.JID(), config.Jabber.Server); err != nil {
 								gTomb.Kill(err)
 
-								continue
+								return
 							}
 
 							serverPingTimestampTx = time.Now().Unix()
@@ -717,7 +723,7 @@ func probeServerLiveness() { //nolint:gocognit
 						if _, err := talk.SendKeepAlive(); err != nil {
 							gTomb.Kill(err)
 
-							continue
+							return
 						}
 					}
 				} else { // Сервер не ответил на disco#info
@@ -726,7 +732,7 @@ func probeServerLiveness() { //nolint:gocognit
 					if _, err := talk.SendKeepAlive(); err != nil {
 						gTomb.Kill(err)
 
-						continue
+						return
 					}
 				}
 			}
@@ -768,7 +774,8 @@ func probeMUCLiveness() { //nolint:gocognit
 
 						if err := talk.PingS2S(talk.JID(), room+"/"+config.Jabber.Nick); err != nil {
 							gTomb.Kill(err)
-							continue
+
+							return
 						}
 					}(room)
 					*/
@@ -790,6 +797,8 @@ func probeMUCLiveness() { //nolint:gocognit
 							if err := talk.PingS2S(talk.JID(), room); err != nil {
 								err := fmt.Errorf("unable to ping MUC %s: %w", room, err)
 								gTomb.Kill(err)
+
+								return
 							}
 						}(room)
 					}

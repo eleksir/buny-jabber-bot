@@ -94,8 +94,6 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 									)
 
 									gTomb.Kill(err)
-
-									continue
 								}
 
 								return err
@@ -127,8 +125,6 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 									)
 
 									gTomb.Kill(err)
-
-									continue
 								}
 
 								return err
@@ -164,8 +160,6 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 									)
 
 									gTomb.Kill(err)
-
-									continue
 								}
 
 								return err
@@ -198,8 +192,6 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 										)
 
 										gTomb.Kill(err)
-
-										continue
 									}
 
 									return err
@@ -256,8 +248,6 @@ func bunyChat(v xmpp.Chat) error {
 								)
 
 								gTomb.Kill(err)
-
-								continue
 							}
 
 							return err
@@ -291,8 +281,6 @@ func bunyChat(v xmpp.Chat) error {
 								)
 
 								gTomb.Kill(err)
-
-								continue
 							}
 
 							return err

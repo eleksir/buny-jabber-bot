@@ -171,37 +171,31 @@ func myLoop() {
 				if err != nil {
 					log.Errorf("Unable to get events from server: %s", err)
 
+					// Попробуем скрасить печальные будни generic-ошибок...
 					switch {
 					// Стрим не читается, он закрылся с той стороны во время чтения
 					case errors.Is(err, io.EOF):
-						err := fmt.Errorf("tcp stream closed while reading, err=%w", err)
-						gTomb.Kill(err)
-
-						continue
+						err = fmt.Errorf("tcp stream closed while reading, err=%w", err)
 
 					// Пытаемся читать закрытый сокет
 					case errors.Is(err, net.ErrClosed):
-						err := fmt.Errorf("unable to read closed socket, err=%w", err)
-						gTomb.Kill(err)
-
-						continue
+						err = fmt.Errorf("unable to read closed socket, err=%w", err)
 
 					// Не смогли записать в сокет
 					case errors.Is(err, net.ErrWriteToConnected):
-						err := fmt.Errorf("unable to write to socket, err=%w", err)
-						gTomb.Kill(err)
-
-						continue
+						err = fmt.Errorf("unable to write to socket, err=%w", err)
 
 					// Не сетевая проблема
 					default:
 						// Это уже что-то странное.
 						// Вероятно, ошибка парсинга xml. Собственно, баг сервера, тут мы ничего поделать не можем
-						err := fmt.Errorf("error during parsing received message, err=%w", err)
-						gTomb.Kill(err)
-
-						continue
+						err = fmt.Errorf("error during parsing received message, err=%w", err)
 					}
+
+					gTomb.Kill(err)
+
+					// Не забываем выходить на ошибке :(
+					return
 				}
 
 				parseEvent(chat)
