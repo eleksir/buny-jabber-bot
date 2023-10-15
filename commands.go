@@ -54,7 +54,7 @@ func cmd(v xmpp.Chat) error {
 			return err
 		}
 
-	case v.Text == fmt.Sprintf("%srehash", config.CSign):
+	case v.Text == fmt.Sprintf("%srehash", config.CSign): //nolint:wsl
 		/* Эта команда может прилетать из приватной беседы с realjid-ом, из приватной беседы с chat-nick-ом, а также из
 		 * чятика.
 		 * Groupchat мы можем определить по v.Type (groupchat) и тогда понятно что делать.

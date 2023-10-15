@@ -209,7 +209,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 	return err
 }
 
-// bunyChat проиводит проверку сообщений участников чата по списку забаненных фраз и в случае нахождения запрещённого
+// bunyChat производит проверку сообщений участников чата по списку забаненных фраз и в случае нахождения запрещённого
 // шаблона банит участника чата.
 func bunyChat(v xmpp.Chat) error {
 	var (
