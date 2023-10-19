@@ -304,7 +304,7 @@ func squash(room, jid string, nick string, reasonEnable bool, vType string) (str
 		err error
 	)
 
-	log.Infof("Hammer falls on %s(%s)", nick, jid)
+	log.Warnf("Hammer falls on %s(%s)", nick, jid)
 
 	if config.Jabber.BanPhrasesEnable {
 		phrase := randomPhrase(config.Jabber.BanPhrases)
