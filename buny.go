@@ -86,7 +86,16 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 							log.Debugf("Checking jid %s vs global blacklist regex %s", evilJid, jidRegexp)
 
 							if re.MatchString(evilJid) {
-								if id, err := squash(room, evilJid, room+"/"+evilNick, bEntry.ReasonEnable, v.Type); err != nil {
+								log.Warnf(
+									"Hammer falls on %s (%s): jid matches with global blacklist entry: %s",
+									v.From,
+									evilJid,
+									jidRegexp,
+								)
+
+								id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type)
+
+								if err != nil {
 									err := fmt.Errorf(
 										"unable to ban user: id=%s, err=%w",
 										id,
@@ -116,8 +125,17 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 							log.Debugf("Checking nick %s vs global blacklist regex %s", evilNick, nickRegexp)
 
 							if re.MatchString(evilNick) {
+								log.Warnf(
+									"Hammer falls on %s (%s): nick matches with global blacklist entry: %s",
+									v.From,
+									evilJid,
+									nickRegexp,
+								)
+
 								// Баним именно jid
-								if id, err := squash(room, evilJid, room+"/"+evilNick, bEntry.ReasonEnable, v.Type); err != nil {
+								id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type)
+
+								if err != nil {
 									err := fmt.Errorf(
 										"unable to ban user: id=%s, err=%w",
 										id,
@@ -152,7 +170,16 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 							log.Debugf("Checking jid %s vs room %s blacklist regex %s", evilJid, room, jidRegexp)
 
 							if re.MatchString(evilJid) {
-								if id, err := squash(room, evilJid, room+"/"+evilNick, bEntry.ReasonEnable, v.Type); err != nil {
+								log.Warnf(
+									"Hammer falls on %s (%s): jid matches with room blacklist entry: %s",
+									v.From,
+									evilJid,
+									jidRegexp,
+								)
+
+								id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type)
+
+								if err != nil {
 									err := fmt.Errorf(
 										"unable to ban user: id=%s, err=%w",
 										id,
@@ -183,8 +210,17 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 								log.Debugf("Checking nick %s vs room %s blacklist regex %s", evilJid, room, nickRegexp)
 
 								if re.MatchString(evilNick) {
+									log.Warnf(
+										"Hammer falls on %s (%s): nick matches with room blacklist entry: %s",
+										v.From,
+										evilJid,
+										nickRegexp,
+									)
+
 									// Баним именно jid
-									if id, err := squash(room, evilJid, room+"/"+evilNick, bEntry.ReasonEnable, v.Type); err != nil {
+									id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type)
+
+									if err != nil {
 										err := fmt.Errorf(
 											"unable to ban user: id=%s, err=%w",
 											id,
@@ -239,7 +275,17 @@ func bunyChat(v xmpp.Chat) error {
 						log.Debugf("Checking phrase %s vs room %s blacklist regex %s", v.Text, room, phraseRegexp)
 
 						if re.MatchString(v.Text) {
-							if id, err := squash(room, getRealJIDfromNick(v.Remote), v.Remote, bEntry.ReasonEnable, v.Type); err != nil {
+							realJID := getRealJIDfromNick(v.Remote)
+
+							log.Warnf(
+								"Hammer falls on %s (%s): phrase matches with global blacklist entry: %s vs %s",
+								v.Remote,
+								realJID,
+								v.Text,
+								phraseRegexp,
+							)
+
+							if id, err := squash(room, realJID, bEntry.ReasonEnable, v.Type); err != nil {
 								err := fmt.Errorf(
 									"unable to ban user: id=%s, err=%w",
 									id,
@@ -272,7 +318,17 @@ func bunyChat(v xmpp.Chat) error {
 						log.Debugf("Checking phrase %s vs room %s blacklist regex %s", v.Text, room, phraseRegexp)
 
 						if re.MatchString(v.Text) {
-							if id, err := squash(room, getRealJIDfromNick(v.Remote), v.Remote, bEntry.ReasonEnable, v.Type); err != nil {
+							realJID := getRealJIDfromNick(v.Remote)
+
+							log.Warnf(
+								"Hammer falls on %s (%s): phrase matches with room blacklist entry: %s vs %s",
+								v.Remote,
+								realJID,
+								v.Text,
+								phraseRegexp,
+							)
+
+							if id, err := squash(room, realJID, bEntry.ReasonEnable, v.Type); err != nil {
 								err := fmt.Errorf(
 									"unable to ban user: id=%s, err=%w",
 									id,
@@ -298,13 +354,11 @@ func bunyChat(v xmpp.Chat) error {
 // squash банит указанный jid в указанной комнате.
 // reasonEnable указывает, надо ли писать дату автобана в банлисте в поле reason (это единственная причина, в которую
 // умеет бот).
-func squash(room, jid string, nick string, reasonEnable bool, vType string) (string, error) {
+func squash(room, jid string, reasonEnable bool, vType string) (string, error) {
 	var (
 		id  string
 		err error
 	)
-
-	log.Warnf("Hammer falls on %s(%s)", nick, jid)
 
 	if config.Jabber.BanPhrasesEnable {
 		phrase := randomPhrase(config.Jabber.BanPhrases)
