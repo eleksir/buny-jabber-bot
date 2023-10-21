@@ -117,17 +117,20 @@ func main() {
 		myLoop()
 
 		log.Error(gTomb.Wait())
+		// Если у нас wire error, то вызов .Close() повлечёт за собой ошибку, но мы вынуждены звать .Close(), чтоб
+		// закрыть tls контекст и почистить всё что связанно с прерванным соединением.
+		_ = talk.Close()
 		time.Sleep(time.Duration(config.Jabber.ReconnectDelay) * time.Second)
 	}
 }
 
 func myLoop() {
-	defer gTomb.Done()
-
 	for {
 		select {
 		case <-gTomb.Dying():
+			gTomb.Done()
 			return
+
 		default:
 			// Зададим начальное значение глобальным переменным
 			serverPingTimestampRx = 0
