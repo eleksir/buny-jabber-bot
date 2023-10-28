@@ -1,7 +1,7 @@
 #!/usr/bin/env gmake -f
 
 BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath -pgo=auto
-FILELIST=collection.go types.go globals.go lib.go event_parser.go buny.go commands.go main.go
+FILELIST=collection.go types.go globals.go lib.go event_parser.go buny.go commands.go main.go norm_string.go bf.go
 
 BINARY=buny-jabber-bot
 

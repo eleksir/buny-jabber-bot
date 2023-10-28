@@ -4,7 +4,13 @@ import (
 	"os"
 
 	"github.com/eleksir/go-xmpp"
+	"github.com/jbrukh/bayesian"
 	"gopkg.in/tomb.v1"
+)
+
+const (
+	Bad  bayesian.Class = "Bad"
+	Good bayesian.Class = "Good"
 )
 
 // Config - это у нас глобальная штука :) .
@@ -68,5 +74,17 @@ var gTomb tomb.Tomb
 
 // sync.Map-ка со списком участников конференций (в json-формате, согласно структуре xmpp.Presence, "room".[]json).
 var roomPresences *Collection
+
+// Переменные для простенького нормализатора текста.
+var (
+	// Знаки препинания раз.
+	pMarks = []string{".", ",", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "{", "}", "<", ">", "[", "]", "\\"}
+
+	// Знаки препинания два-с.
+	pMarks2 = []string{"-", "_", "+", "=", ":", ";", "'", "`", "~", "\""}
+
+	// Символы новой строки.
+	newLines = []string{"\n", "\r", "\n\r", "\r\n"}
+)
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

@@ -244,6 +244,44 @@ func readConfig() error { //nolint:gocognit,gocyclo
 			return errors.New("no jabber channels/rooms defined in config, quitting") //nolint:goerr113
 		}
 
+		for _, channel := range sampleConfig.Jabber.Channels {
+			if channel.Name == "" {
+				return errors.New("no \"name\" entry in jabber channel config")
+			}
+
+			// channel.Password может быть пустым, тогда пароля нет
+			// channel.Bayes.Enabled будет false, если не проставлен
+
+			if channel.Bayes.MinLength < 40 {
+				channel.Bayes.MinLength = 40
+			}
+
+			if channel.Bayes.MinWords < 8 {
+				channel.Bayes.MinWords = 8
+			}
+
+			switch channel.Bayes.DefaultAction {
+			case "kick":
+			case "ban":
+			case "devoice":
+			default:
+				channel.Bayes.DefaultAction = "log"
+			}
+
+			// channel.AllCaps.Enabled будет false, если не указан
+			if channel.AllCaps.MinLength < 10 {
+				channel.AllCaps.MinLength = 10
+			}
+
+			switch channel.AllCaps.DefaultAction {
+			case "kick":
+			case "ban":
+			case "devoice":
+			default:
+				channel.AllCaps.DefaultAction = "log"
+			}
+		}
+
 		// Если список фраз с которыми стартует бот пустой, вносим в него 1 запись с пустой строкой
 		if len(sampleConfig.Jabber.StartupStatus) == 0 {
 			sampleConfig.Jabber.StartupStatus[0] = ""
@@ -496,6 +534,7 @@ func establishConnection() {
 	isConnected = false
 	roomsConnected = make([]string, 0)
 
+	log.Debugf("Establishing connection to %s", options.Host)
 	talk, err = options.NewClient()
 
 	if err != nil {
@@ -516,7 +555,8 @@ func establishConnection() {
 	log.Info("Connected")
 
 	// Джойнимся к чятикам, но делаем это в фоне, чтобы не блочиться на ошибках, например, если бота забанили
-	for _, room := range config.Jabber.Channels {
+	for _, roomStruct := range config.Jabber.Channels {
+		room := roomStruct.Name
 		go joinMuc(room)
 	}
 
@@ -647,7 +687,7 @@ func probeServerLiveness() { //nolint:gocognit
 				}
 
 				sleepTime := time.Duration(config.Jabber.ServerPingDelay) * 1000 * time.Millisecond
-				sleepTime += time.Duration(rand.Int63n(1000*config.Jabber.PingSplayDelay)) * time.Millisecond //nolint:gosec
+				sleepTime += time.Duration(rand.Int63n(1000*config.Jabber.PingSplayDelay)) * time.Millisecond
 				time.Sleep(sleepTime)
 
 				if !isConnected {
@@ -789,7 +829,7 @@ func probeMUCLiveness() { //nolint:gocognit
 					if exist && roomMap.(map[string]bool)["http://jabber.org/protocol/muc#self-ping-optimization"] {
 						go func(room string) {
 							// Небольшая рандомная задержка перед пингом комнаты.
-							sleepTime := time.Duration(rand.Int63n(1000*config.Jabber.PingSplayDelay)) * time.Millisecond //nolint:gosec
+							sleepTime := time.Duration(rand.Int63n(1000*config.Jabber.PingSplayDelay)) * time.Millisecond
 							time.Sleep(sleepTime)
 
 							log.Debugf("Sending MUC ping from %s to %s", talk.JID(), room)
@@ -866,7 +906,7 @@ func randomPhrase(list []string) string {
 	phrase := ""
 
 	if listLen := len(list); listLen > 0 {
-		phrase = list[rand.Intn(listLen)] //nolint:gosec
+		phrase = list[rand.Intn(listLen)]
 	}
 
 	return phrase
