@@ -358,10 +358,19 @@ func bunyChat(v xmpp.Chat) error {
 
 						if normPhrase == normPhraseUpper {
 							realJID := getRealJIDfromNick(v.Remote)
-							squash(room, realJID, false, v.Type)
+							id, err := squash(room, realJID, false, v.Type)
+
+							if err != nil {
+								err := fmt.Errorf(
+									"unable to ban user: id=%s, err=%w",
+									id,
+									err,
+								)
+
+								gTomb.Kill(err)
+							}
 						}
 					}
-
 				}
 			}
 
