@@ -30,12 +30,12 @@ type myConfig struct {
 			Bayes    struct {
 				Enabled       bool   `json:"enabled,omitempty"`
 				MinWords      int64  `json:"min_words,omitempty"`
-				MinLength     int64  `json:"min_length,omitempty"`
+				MinLength     int    `json:"min_length,omitempty"`
 				DefaultAction string `json:"default_action,omitempty"`
 			} `json:"bayes,omitempty"`
 			AllCaps struct {
 				Enabled       bool   `json:"enabled,omitempty"`
-				MinLength     int64  `json:"min_length,omitempty"`
+				MinLength     int    `json:"min_length,omitempty"`
 				DefaultAction string `json:"default_action,omitempty"`
 			} `json:"all_caps,omitempty"`
 		} `json:"channels"`

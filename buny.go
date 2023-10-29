@@ -254,8 +254,10 @@ func bunyChat(v xmpp.Chat) error {
 		err error
 	)
 
+	// Действовать мы можем только в рамках тех комнат, где явно присуствуем.
 	for _, cRoom := range roomsConnected {
 		if cRoom == room {
+			// Перебирём правила чёрных списков.
 			for _, bEntry := range blackList.Blacklist {
 				// Обработаем правила глобального чёрного списка
 				if bEntry.RoomName == "" {
@@ -341,6 +343,25 @@ func bunyChat(v xmpp.Chat) error {
 							return err
 						}
 					}
+				}
+			}
+
+			// Если включено, проверяем фразу на КАПС.
+			for _, channel := range config.Jabber.Channels {
+				if channel.Name == room && channel.AllCaps.Enabled {
+					// Нормализуем строку и вырежем из неё пробелы
+					normPhrase := strings.ReplaceAll(nString(v.Text), " ", "")
+
+					// Проверяем согласно тому, что длина фразы более чем сколько-то символов
+					if len(normPhrase) >= channel.AllCaps.MinLength {
+						normPhraseUpper := strings.ReplaceAll(nStringUpper(v.Text), " ", "")
+
+						if normPhrase == normPhraseUpper {
+							realJID := getRealJIDfromNick(v.Remote)
+							squash(room, realJID, false, v.Type)
+						}
+					}
+
 				}
 			}
 
