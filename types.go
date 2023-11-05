@@ -26,6 +26,7 @@ type myConfig struct {
 		BotMasters                   []string `json:"bot_masters,omitempty"`
 		Channels                     []struct {
 			Name     string `json:"name,omitempty"`
+			Nick     string `json:"nick,omitempty"`
 			Password string `json:"password,omitempty"`
 			Bayes    struct {
 				Enabled       bool   `json:"enabled,omitempty"`

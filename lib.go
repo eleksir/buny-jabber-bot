@@ -355,7 +355,8 @@ func joinMuc(room string) {
 		}
 	}
 
-	if _, err := talk.JoinMUCNoHistory(room, config.Jabber.Nick); err != nil {
+	// Заходим в конфу, наконец-то
+	if _, err := talk.JoinMUCNoHistory(room, getBotNickFromRoomConfig(room)); err != nil {
 		log.Errorf("Unable to join to MUC: %s", room)
 
 		gTomb.Kill(err)
@@ -551,14 +552,13 @@ func probeMUCLiveness() { //nolint:gocognit
 						sleepTime := time.Duration(rand.Int63n(1000*config.Jabber.PingSplayDelay)) * time.Millisecond //nolint:gosec
 						time.Sleep(sleepTime)
 
-						if err := talk.PingS2S(talk.JID(), room+"/"+config.Jabber.Nick); err != nil {
+						if err := talk.PingS2S(talk.JID(), room+"/"+getBotNickFromRoomConfig(room)); err != nil {
 							gTomb.Kill(err)
 
 							return
 						}
 					}(room)
 					*/
-
 					var roomMap interface{}
 
 					roomMap, exist = mucCapsList.Get(room)
@@ -695,6 +695,16 @@ func getRealJIDfromNick(fullNick string) string {
 	}
 
 	return ""
+}
+
+func getBotNickFromRoomConfig(room string) string {
+	for _, roomStruct := range config.Jabber.Channels {
+		if roomStruct.Name == room {
+			return roomStruct.Nick
+		}
+	}
+
+	return config.Jabber.Nick
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

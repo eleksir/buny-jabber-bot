@@ -5,7 +5,7 @@
 			"room_name": "",
 
 			# Записывать ли в reason в банлисте комнаты сообщение вида autoban at yyyy.MM.dd hh:mm:ss.
-			# Если не задано, то false
+			# Если не задано, то false.
 			"reason_enable": false,
 
 			# Список регулярок JID-ов, которых надо банить.
