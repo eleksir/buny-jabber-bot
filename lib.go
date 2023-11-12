@@ -57,7 +57,7 @@ func sigHandler() {
 			}
 
 			// И закрываем соединение.
-			log.Debugf("Closing connection to jabber server")
+			log.Infoln("Closing connection to jabber server")
 
 			if err := talk.Close(); err != nil {
 				log.Infof("Unable to close connection to jabber server: %s", err)
