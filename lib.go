@@ -413,11 +413,10 @@ func joinMuc(room string) {
 // probeServerLiveness проверяет живость соединения с сервером. Для многих серверов обязательная штука, без которой
 // они выкидывают клиента через некоторое время неактивности.
 func probeServerLiveness() { //nolint:gocognit
-	defer gTomb.Done()
-
 	for {
 		select {
 		case <-gTomb.Dying():
+			gTomb.Done()
 			return
 
 		default:
@@ -525,6 +524,7 @@ func probeMUCLiveness() { //nolint:gocognit
 	for {
 		select {
 		case <-gTomb.Dying():
+			gTomb.Done()
 			return
 
 		default:
@@ -591,11 +591,10 @@ func probeMUCLiveness() { //nolint:gocognit
 
 // RotateStatus периодически изменяет статус бота в MUC-е согласно настройкам из кофига.
 func RotateStatus(room string) {
-	defer gTomb.Done()
-
 	for {
 		select {
 		case <-gTomb.Dying():
+			gTomb.Done()
 			return
 
 		default:
