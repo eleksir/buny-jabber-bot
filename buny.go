@@ -83,9 +83,9 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 								continue
 							}
 
-							log.Debugf("Checking jid %s vs global blacklist regex %s", evilJid, jidRegexp)
+							log.Debugf("Checking jid %s vs global blacklist regex %s", v.JID, jidRegexp)
 
-							if re.MatchString(evilJid) {
+							if re.MatchString(v.JID) {
 								log.Warnf(
 									"Hammer falls on %s (%s): jid matches with global blacklist entry: %s",
 									v.From,
@@ -167,9 +167,9 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 								continue
 							}
 
-							log.Debugf("Checking jid %s vs room %s blacklist regex %s", evilJid, room, jidRegexp)
+							log.Debugf("Checking jid %s vs room %s blacklist regex %s", v.JID, room, jidRegexp)
 
-							if re.MatchString(evilJid) {
+							if re.MatchString(v.JID) {
 								log.Warnf(
 									"Hammer falls on %s (%s): jid matches with room blacklist entry: %s",
 									v.From,
