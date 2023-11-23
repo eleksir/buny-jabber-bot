@@ -386,10 +386,14 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			case v.To == talk.JID() && v.ID == "ban1":
 				mucNickMatch := false
 
+				// Если ник, которому предназначается сообщение, совпадает с ником, из конфига бота (глобального или для
+				// комнаты), то считаем, что мы есть в этой комнате. Потому что в противном случае в roomsConnected не
+				// будет искомой комнаты и мы не сможем составить ник бота, чтобы сравнить его с тем, кому адресовано
+				// уведомление.
 				for _, room := range roomsConnected {
 					mucNick := fmt.Sprintf("%s/%s", room, getBotNickFromRoomConfig(room))
 
-					if v.From == mucNick {
+					if v.To == mucNick {
 						mucNickMatch = true
 
 						break
@@ -403,6 +407,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					if iqStruct.Xmlns == "http://jabber.org/protocol/muc#admin" && iqStruct.Text == "" {
+
 						if mucNickMatch {
 							// Поскольку никакой логики у нас на этот счёт не предусмотрено, то просто пропускаем ответ
 							log.Infof("Got ban successful from %s to %s", v.From, v.To)
