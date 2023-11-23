@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// cmd парсит команды из чятика.
 func cmd(v xmpp.Chat) error {
 	var err error
 

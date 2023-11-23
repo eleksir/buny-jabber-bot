@@ -696,6 +696,8 @@ func getRealJIDfromNick(fullNick string) string {
 	return ""
 }
 
+// getBotNickFromRoomConfig достаёт из настроек комнаты короткий ник бота, либо берёт значение из конфига, если ник в
+// настройках комнаты не задан. Короткий ник не содержит название комнаты.
 func getBotNickFromRoomConfig(room string) string {
 	for _, roomStruct := range config.Jabber.Channels {
 		if roomStruct.Name == room {
