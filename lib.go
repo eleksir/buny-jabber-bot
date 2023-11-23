@@ -42,8 +42,8 @@ func sigHandler() {
 		if isConnected && !shutdown {
 			log.Debug("Try to set our presence to Unavailable and status to Offline")
 
-			// Вот тут понадобится коллекция известных пользователей, чтобы им разослать presence, что бот свалил в offline
-			// Пока за неимением лучшего сообщим об этом самим себе.
+			// Вот тут понадобится коллекция известных пользователей, чтобы им разослать presence, что бот свалил в
+			// offline. Пока за неимением лучшего сообщим об этом самим себе.
 			for _, room := range roomsConnected {
 				if _, err := talk.SendPresence(
 					xmpp.Presence{ //nolint:exhaustruct
@@ -317,7 +317,7 @@ func establishConnection() {
 	}
 }
 
-// joinMu джойнится к конференциям/каналам/комнатам в джаббере.
+// joinMuс джойнится к конференциям/каналам/комнатам в джаббере.
 func joinMuc(room string) {
 	log.Debugf("Sending disco#info from %s to %s", talk.JID(), room)
 
@@ -411,7 +411,7 @@ func joinMuc(room string) {
 }
 
 // probeServerLiveness проверяет живость соединения с сервером. Для многих серверов обязательная штука, без которой
-// они выкидывают клиента через некоторое время неактивности.
+// они выкидывают (дисконнектят) клиента через некоторое время неактивности.
 func probeServerLiveness() { //nolint:gocognit
 	for {
 		select {

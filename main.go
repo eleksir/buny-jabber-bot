@@ -50,9 +50,9 @@ func init() {
 	}
 }
 
-// main - фактичеки начало и соновное тело программы.
+// main - фактичеcки начало и основное тело программы.
 func main() {
-	// Откроем лог и скормим его логгеру
+	// Откроем лог и скормим его логгеру.
 	if config.Log != "" {
 		logfile, err := os.OpenFile(config.Log, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 
@@ -85,13 +85,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	// github.com/mattn/go-xmpp пишет в stdio, нам этого не надо, ловим выхлоп его в logrus с уровнем trace
+	// github.com/mattn/go-xmpp пишет в stdio, нам этого не надо, ловим выхлоп его в logrus с уровнем trace.
 	xmpp.DebugWriter = log.WithFields(log.Fields{"logger": "stdlib"}).WriterLevel(log.TraceLevel)
 
-	// Хэндлер сигналов не надо трогать, он нужен для завершения программы целиком
+	// Хэндлер сигналов не надо трогать, он нужен для завершения программы целиком.
 	go sigHandler()
 	signal.Notify(sigChan, os.Interrupt)
 
+	// Враппер основной программы. Фактически на каждой серьёзной ошибке, например, сетевой, mainLoop и некоторые
+	// вспомогательные корутины прекращает свою работу. Здесь мы это ловим и запускаем их снова. Задача в том, чтобы
+	// запустить все асинхронные процессы заново, с чистого листа, но уже с распарсенным конфигом.
 	for {
 		options = &xmpp.Options{ //nolint:exhaustruct
 			Host:     fmt.Sprintf("%s:%d", config.Jabber.Server, config.Jabber.Port),
@@ -112,12 +115,13 @@ func main() {
 			DialTimeout:                  time.Duration(config.Jabber.ConnectionTimeout) * time.Second,
 		}
 
-		// Через tomb попробуем сделать выход горутинок управляемым
+		// Через tomb попробуем сделать завершение горутинок управляемым.
 		gTomb = tomb.Tomb{}
 
-		// Устанавливаем соединение и гребём события, посылаемые сервером
+		// Устанавливаем соединение и гребём события, посылаемые сервером - основной и вспомогательные циклы программы.
 		myLoop()
 
+		// Логгируем причину завершения mainLoop и вспомогательных циклов программы.
 		log.Error(gTomb.Wait())
 
 		// Если у нас wire error, то вызов .Close() повлечёт за собой ошибку, но мы вынуждены звать .Close(), чтоб
@@ -129,7 +133,7 @@ func main() {
 	}
 }
 
-// Основной цикл программы
+// Основной цикл программы.
 func myLoop() {
 	for {
 		select {
