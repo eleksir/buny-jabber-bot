@@ -2,9 +2,9 @@
 
 <table style="border-collapse: collapse; border: none;">
 <tr style="border: none;">
-<td rowspan=2 style="border: none;"><img src="assets/avatar.png" alt="Бани"></td>
+<td rowspan=2 style="border: none;"><img src="assets/avatar.png" alt="Бани" style="max-width: none; min-width:100%"></td>
 <td style="border: none;">Простой бот, работающий по протоколу xmpp. Его задача - банить абьюзеров чата. При его
-создании не стояло задачи сделать что-то красивое в архитектурном или каком-то другм плане.</td>
+создании не стояло задачи сделать что-то красивое в архитектурном или каком-то другом плане.</td>
 </tr>
 <tr style="border: none;">
 <td style="border: none;">Этот бот автоматизирует уборку человеческой грязи. Самый важный вопрос, который следует себе
