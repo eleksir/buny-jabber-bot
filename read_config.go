@@ -189,7 +189,7 @@ func readConfig() error { //nolint:gocognit,gocyclo
 
 		for n, channel := range sampleConfig.Jabber.Channels {
 			if channel.Name == "" {
-				return errors.New("no \"name\" entry in jabber channel config")
+				return errors.New("no \"name\" entry in jabber channel config") //nolint:goerr113
 			}
 
 			if channel.Nick == "" {
@@ -265,13 +265,13 @@ func readConfig() error { //nolint:gocognit,gocyclo
 		config = sampleConfig
 		configLoaded = true
 
-		log.Infof("Using %s as config file", location) //nolint:wsl
+		log.Infof("Using %s as config file", location)
 
 		break
 	}
 
 	if !configLoaded {
-		return errors.New("config was not loaded!") //nolint:goerr113
+		return errors.New("config was not loaded") //nolint:goerr113
 	}
 
 	return err //nolint:wrapcheck

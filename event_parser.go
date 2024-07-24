@@ -601,6 +601,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			case "none":
 				if presenceJSONInterface, present := roomPresences.Get(room); present {
 					presenceJSONStrings := interfaceToStringSlice(presenceJSONInterface)
+
 					var newPresenceJSONStrings []string
 
 					for _, presenceJSONstring := range presenceJSONStrings {
@@ -618,9 +619,11 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				}
 			// Участник пришёл
 			default:
-				var presenceJSONStrings []string
-				var newPresenceJSONStrings []string
-				var presenceJSONBytes []byte
+				var (
+					presenceJSONStrings    []string
+					newPresenceJSONStrings []string
+					presenceJSONBytes      []byte
+				)
 
 				if presenceJSONInterface, present := roomPresences.Get(room); present {
 					presenceJSONStrings = interfaceToStringSlice(presenceJSONInterface)

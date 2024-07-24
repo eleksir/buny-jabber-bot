@@ -127,6 +127,7 @@ func main() {
 		// Если у нас wire error, то вызов .Close() повлечёт за собой ошибку, но мы вынуждены звать .Close(), чтоб
 		// закрыть tls контекст и почистить всё что связанно с прерванным соединением.
 		log.Infoln("Closing connection to jabber server")
+
 		_ = talk.Close()
 
 		time.Sleep(time.Duration(config.Jabber.ReconnectDelay) * time.Second)
@@ -180,6 +181,7 @@ func myLoop() {
 				if !isConnected {
 					// Tight loop - это наверно не очень хорошо, думаю, ничего страшного не будет, если мы поспим 100мс.
 					time.Sleep(100 * time.Millisecond)
+
 					continue
 				}
 

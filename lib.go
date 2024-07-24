@@ -158,7 +158,7 @@ func readWhitelist() error {
 	}
 
 	if !whitelistLoaded {
-		return errors.New("whitelist was not loaded!") //nolint:goerr113
+		return errors.New("whitelist was not loaded") //nolint:goerr113
 	}
 
 	return err
@@ -254,7 +254,7 @@ func readBlacklist() error {
 	}
 
 	if !blacklistLoaded {
-		return errors.New("blacklist was not loaded!")
+		return errors.New("blacklist was not loaded") //nolint:goerr113
 	}
 
 	return err
@@ -417,6 +417,7 @@ func probeServerLiveness() { //nolint:gocognit
 		select {
 		case <-gTomb.Dying():
 			gTomb.Done()
+
 			return
 
 		default:
@@ -525,6 +526,7 @@ func probeMUCLiveness() { //nolint:gocognit
 		select {
 		case <-gTomb.Dying():
 			gTomb.Done()
+
 			return
 
 		default:
@@ -595,6 +597,7 @@ func RotateStatus(room string) {
 		select {
 		case <-gTomb.Dying():
 			gTomb.Done()
+
 			return
 
 		default:
