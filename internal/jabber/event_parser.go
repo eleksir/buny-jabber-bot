@@ -184,7 +184,9 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					answer += "<feature var=\"urn:xmpp:time\" />"
 					answer += "<feature var=\"urn:xmpp:ping\" />"
 					answer += "<feature var=\"jabber:iq:last\" />"
+					answer += "<feature var=\"http://jabber.org/protocol/caps\" />"
 					answer += "<feature var=\"http://jabber.org/protocol/disco#info\" />"
+					answer += "<feature var=\"http://jabber.org/protocol/muc\" />"
 					answer += "</query>"
 
 					if id, err := j.Talk.RawInformation(
