@@ -1,4 +1,4 @@
-package main
+package jabber
 
 import (
 	"bufio"
@@ -12,9 +12,11 @@ import (
 )
 
 const (
-	goodDictionaryFile string = "./data/good_dictionary.txt"
-	badDictionaryFile  string = "./data/bad_dictionary.txt"
-	dataFile           string = "./data/data.bin"
+	goodDictionaryFile string         = "./data/good_dictionary.txt"
+	badDictionaryFile  string         = "./data/bad_dictionary.txt"
+	dataFile           string         = "./data/data.bin"
+	Bad                bayesian.Class = "Bad"
+	Good               bayesian.Class = "Good"
 )
 
 // Выдаёт "очки похожести" для данной фразы.

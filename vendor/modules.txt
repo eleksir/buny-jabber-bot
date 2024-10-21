@@ -13,19 +13,20 @@ github.com/jbrukh/bayesian
 # github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
-# golang.org/x/crypto v0.25.0
-## explicit; go 1.20
+# golang.org/x/crypto v0.10.0
+## explicit; go 1.17
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
-## explicit; go 1.20
+# golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
+## explicit; go 1.22.0
 golang.org/x/exp/constraints
 golang.org/x/exp/slices
-# golang.org/x/sys v0.22.0
-## explicit; go 1.18
+# golang.org/x/sys v0.9.0
+## explicit; go 1.17
+golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.16.0
-## explicit; go 1.18
+# golang.org/x/text v0.10.0
+## explicit; go 1.17
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/internal

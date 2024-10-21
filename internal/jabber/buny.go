@@ -1,26 +1,25 @@
-package main
+package jabber
 
 import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/eleksir/go-xmpp"
 	log "github.com/sirupsen/logrus"
 )
 
-// bunyPresense производит проверку по бело-чёрным спискам. Если presence пришёл от злодея (из чёрного списка), то
+// BunyPresense производит проверку по бело-чёрным спискам. Если presence пришёл от злодея (из чёрного списка), то
 // отправляет его в бан.
-func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
+func (j *Jabber) BunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 	var err error
 
 	// Если у presence-а есть JID и presence из одной из комнат, в которой мы есть и если его домен в чёрном
 	// списке, заносим пидора в список outcast-ов
 	if v.JID != "" {
 		// На всякий случай: себя никогда не баним, явным образом
-		if v.JID == talk.JID() {
+		if v.JID == j.Talk.JID() {
 			return err
 		}
 
@@ -35,7 +34,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 		goodJid := strings.SplitN(v.JID, "/", 2)[0]
 
 		// Обрабатываем правила белого списка
-		for _, good := range whiteList.Whitelist {
+		for _, good := range j.WhiteList.Whitelist {
 			// Глобальный белый список
 			if good.RoomName == "" {
 				for _, person := range good.Jid {
@@ -65,9 +64,9 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 		}
 
 		// Обрабатываем правила чёрного списка
-		for _, cRoom := range roomsConnected {
+		for _, cRoom := range j.RoomsConnected {
 			if cRoom == room {
-				for _, bEntry := range blackList.Blacklist {
+				for _, bEntry := range j.BlackList.Blacklist {
 					// Обработаем правила глобального чёрного списка
 					if bEntry.RoomName == "" {
 						for _, jidRegexp := range bEntry.JidRe {
@@ -93,7 +92,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 									jidRegexp,
 								)
 
-								id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type)
+								id, err := j.Squash(room, evilJid, bEntry.ReasonEnable, v.Type)
 
 								if err != nil {
 									err := fmt.Errorf(
@@ -102,7 +101,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 										err,
 									)
 
-									gTomb.Kill(err)
+									j.GTomb.Kill(err)
 								}
 
 								return err
@@ -133,7 +132,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 								)
 
 								// Баним именно jid
-								id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type)
+								id, err := j.Squash(room, evilJid, bEntry.ReasonEnable, v.Type)
 
 								if err != nil {
 									err := fmt.Errorf(
@@ -142,7 +141,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 										err,
 									)
 
-									gTomb.Kill(err)
+									j.GTomb.Kill(err)
 								}
 
 								return err
@@ -177,7 +176,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 									jidRegexp,
 								)
 
-								id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type)
+								id, err := j.Squash(room, evilJid, bEntry.ReasonEnable, v.Type)
 
 								if err != nil {
 									err := fmt.Errorf(
@@ -186,7 +185,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 										err,
 									)
 
-									gTomb.Kill(err)
+									j.GTomb.Kill(err)
 								}
 
 								return err
@@ -218,7 +217,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 									)
 
 									// Баним именно jid
-									id, err := squash(room, evilJid, bEntry.ReasonEnable, v.Type)
+									id, err := j.Squash(room, evilJid, bEntry.ReasonEnable, v.Type)
 
 									if err != nil {
 										err := fmt.Errorf(
@@ -227,7 +226,7 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 											err,
 										)
 
-										gTomb.Kill(err)
+										j.GTomb.Kill(err)
 									}
 
 									return err
@@ -245,9 +244,9 @@ func bunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 	return err
 }
 
-// bunyChat производит проверку сообщений участников чата по списку забаненных фраз и в случае нахождения запрещённого
+// BunyChat производит проверку сообщений участников чата по списку забаненных фраз и в случае нахождения запрещённого
 // шаблона банит участника чата.
-func bunyChat(v xmpp.Chat) error {
+func (j *Jabber) BunyChat(v xmpp.Chat) error {
 	var (
 		room = (strings.SplitN(v.Remote, "/", 2))[0]
 		// nick = (strings.SplitN(v.Remote, "/", 2))[1]
@@ -255,10 +254,10 @@ func bunyChat(v xmpp.Chat) error {
 	)
 
 	// Действовать мы можем только в рамках тех комнат, где явно присуствуем.
-	for _, cRoom := range roomsConnected {
+	for _, cRoom := range j.RoomsConnected {
 		if cRoom == room {
 			// Перебирём правила чёрных списков.
-			for _, bEntry := range blackList.Blacklist {
+			for _, bEntry := range j.BlackList.Blacklist {
 				// Обработаем правила глобального чёрного списка
 				if bEntry.RoomName == "" {
 					for _, phraseRegexp := range bEntry.PhraseRe {
@@ -277,7 +276,7 @@ func bunyChat(v xmpp.Chat) error {
 						log.Debugf("Checking phrase %s vs room %s blacklist regex %s", v.Text, room, phraseRegexp)
 
 						if re.MatchString(v.Text) {
-							realJID := getRealJIDfromNick(v.Remote)
+							realJID := j.GetRealJIDfromNick(v.Remote)
 
 							log.Warnf(
 								"Hammer falls on %s (%s): phrase matches with global blacklist entry: %s vs %s",
@@ -287,14 +286,14 @@ func bunyChat(v xmpp.Chat) error {
 								phraseRegexp,
 							)
 
-							if id, err := squash(room, realJID, bEntry.ReasonEnable, v.Type); err != nil {
+							if id, err := j.Squash(room, realJID, bEntry.ReasonEnable, v.Type); err != nil {
 								err := fmt.Errorf(
 									"unable to ban user: id=%s, err=%w",
 									id,
 									err,
 								)
 
-								gTomb.Kill(err)
+								j.GTomb.Kill(err)
 							}
 
 							return err
@@ -320,7 +319,7 @@ func bunyChat(v xmpp.Chat) error {
 						log.Debugf("Checking phrase %s vs room %s blacklist regex %s", v.Text, room, phraseRegexp)
 
 						if re.MatchString(v.Text) {
-							realJID := getRealJIDfromNick(v.Remote)
+							realJID := j.GetRealJIDfromNick(v.Remote)
 
 							log.Warnf(
 								"Hammer falls on %s (%s): phrase matches with room blacklist entry: %s vs %s",
@@ -330,14 +329,14 @@ func bunyChat(v xmpp.Chat) error {
 								phraseRegexp,
 							)
 
-							if id, err := squash(room, realJID, bEntry.ReasonEnable, v.Type); err != nil {
+							if id, err := j.Squash(room, realJID, bEntry.ReasonEnable, v.Type); err != nil {
 								err := fmt.Errorf(
 									"unable to ban user: id=%s, err=%w",
 									id,
 									err,
 								)
 
-								gTomb.Kill(err)
+								j.GTomb.Kill(err)
 							}
 
 							return err
@@ -347,7 +346,7 @@ func bunyChat(v xmpp.Chat) error {
 			}
 
 			// Если включено, проверяем фразу на КАПС.
-			for _, channel := range config.Jabber.Channels {
+			for _, channel := range j.C.Jabber.Channels {
 				if channel.Name == room && channel.AllCaps.Enabled {
 					// Нормализуем строку и вырежем из неё пробелы
 					normPhrase := strings.ReplaceAll(nString(v.Text), " ", "")
@@ -357,8 +356,8 @@ func bunyChat(v xmpp.Chat) error {
 						normPhraseUpper := strings.ReplaceAll(nStringUpper(v.Text), " ", "")
 
 						if normPhrase == normPhraseUpper {
-							realJID := getRealJIDfromNick(v.Remote)
-							id, err := squash(room, realJID, false, v.Type)
+							realJID := j.GetRealJIDfromNick(v.Remote)
+							id, err := j.Squash(room, realJID, false, v.Type)
 
 							if err != nil {
 								err := fmt.Errorf(
@@ -367,7 +366,7 @@ func bunyChat(v xmpp.Chat) error {
 									err,
 								)
 
-								gTomb.Kill(err)
+								j.GTomb.Kill(err)
 							}
 						}
 					}
@@ -379,76 +378,6 @@ func bunyChat(v xmpp.Chat) error {
 	}
 
 	return err
-}
-
-// squash банит указанный jid в указанной комнате.
-// reasonEnable указывает, надо ли писать дату автобана в банлисте в поле reason (это единственная причина, в которую
-// умеет бот).
-func squash(room, jid string, reasonEnable bool, vType string) (string, error) {
-	var (
-		id  string
-		err error
-	)
-
-	if config.Jabber.BanPhrasesEnable {
-		phrase := randomPhrase(config.Jabber.BanPhrases)
-
-		if _, err = talk.Send(
-			xmpp.Chat{ //nolint:exhaustruct
-				Remote: room,
-				Text:   phrase,
-				Type:   vType,
-			},
-		); err != nil {
-			err = fmt.Errorf("unable to send phrase to room %s: %w", room, err)
-
-			// Здесь возвращаем nil, т.к. за нас ошибку залоггирует код выше
-			return id, err
-		}
-	}
-
-	// https://xmpp.org/extensions/xep-0045.html#ban баним вот таким сообщением
-	ban := "<item affiliation='outcast' jid='" + jid + "'>"
-
-	if reasonEnable {
-		var t = time.Now()
-		ban += fmt.Sprintf(
-			"<reason>autoban at %04d.%02d.%02d %02d:%02d:%02d</reason>",
-			t.Year(),
-			t.Month(),
-			t.Day(),
-			t.Hour(),
-			t.Minute(),
-			t.Second(),
-		)
-	} else {
-		ban += "<reason />"
-	}
-
-	ban += "</item>"
-
-	// Выжидаем некоторое время перед баном. А то можно настолько рано забанить, что сервер не внесёт злодея в банлист
-	// комнаты и пришлёт affiliation: none вместо affiliation: outcast.
-	if config.Jabber.BanDelay > 0 {
-		time.Sleep(time.Duration(config.Jabber.BanDelay) * time.Millisecond)
-	}
-
-	if id, err = talk.RawInformationQuery(
-		talk.JID(),
-		room,
-		"ban1",
-		xmpp.IQTypeSet,
-		"http://jabber.org/protocol/muc#admin",
-		ban,
-	); err != nil {
-		err = fmt.Errorf(
-			"unable to ban user: id=%s, err=%w",
-			id,
-			err,
-		)
-	}
-
-	return id, err
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

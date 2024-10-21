@@ -1,10 +1,8 @@
 #!/usr/bin/env gmake -f
 
 BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath
-FILELIST= bf.go buny.go commands.go collection.go event_parser.go globals.go lib.go main.go norm_string.go \
- read_config.go types.go
-
-BINARY=buny-jabber-bot
+MYNAME=buny-jabber-bot
+BINARY=$(MYNAME)
 
 # На windows имя бинарника может зависеть не только от платформы, но и от выбранной цели, для linux-а суффикс .exe
 # не нужен
@@ -34,21 +32,21 @@ ifeq ($(OS),Windows_NT)
 # вариант с powershell на windows
 ifeq ($(SHELL),sh.exe)
 	SET CGO_ENABLED=0
-	go build ${BUILDOPTS} -o ${BINARY} ${FILELIST}
+	go build ${BUILDOPTS} -o ${BINARY} ./cmd/${MYNAME}
 else
 # вариант с jetbrains golang на windows
 	CGO_ENABLED=0
-	go build ${BUILDOPTS} -o ${BINARY} ${FILELIST}
+	go build ${BUILDOPTS} -o ${BINARY} ./cmd/${MYNAME}
 endif
 # вариант с bash/git (windows) и bash (linux)
 else
-	CGO_ENABLED=0 go build ${BUILDOPTS} -o ${BINARY} ${FILELIST}
+	CGO_ENABLED=0 go build ${BUILDOPTS} -o ${BINARY} ./cmd/${MYNAME}
 endif
 
 
 ## Удаляем бинарник средствами go
 clean:
-	go clean
+	$(RM) ${BINARY}
 
 
 ## Служебный таргет, для целей разработки. Обновляет завендоренные либы, брутальным образом.

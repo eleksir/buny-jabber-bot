@@ -1,4 +1,4 @@
-package main
+package jabber
 
 import (
 	"fmt"
@@ -10,29 +10,29 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// cmd парсит команды из чятика.
-func cmd(v xmpp.Chat) error {
+// Cmd парсит команды из чятика.
+func (j *Jabber) Cmd(v xmpp.Chat) error {
 	var err error
 
 	switch {
-	case v.Text == fmt.Sprintf("%shelp", config.CSign) || v.Text == fmt.Sprintf("%sпомощь", config.CSign):
+	case v.Text == fmt.Sprintf("%shelp", j.C.CSign) || v.Text == fmt.Sprintf("%sпомощь", j.C.CSign):
 		var (
 			answer         string
 			chosenOneTalks = false
 		)
 
-		realJID := getRealJIDfromNick(v.Remote)
+		realJID := j.GetRealJIDfromNick(v.Remote)
 
-		for _, master := range config.Jabber.BotMasters {
+		for _, master := range j.C.Jabber.BotMasters {
 			if (strings.SplitN(realJID, "/", 2))[0] == master {
 				chosenOneTalks = true
 			}
 		}
 
 		if chosenOneTalks {
-			answer = fmt.Sprintf("%sпомощь - этот список команд\n", config.CSign)
-			answer += fmt.Sprintf("%shelp   - this commands list\n", config.CSign)
-			answer += fmt.Sprintf("%srehash - reload white and black lists", config.CSign)
+			answer = fmt.Sprintf("%sпомощь - этот список команд\n", j.C.CSign)
+			answer += fmt.Sprintf("%shelp   - this commands list\n", j.C.CSign)
+			answer += fmt.Sprintf("%srehash - reload white and black lists", j.C.CSign)
 		} else {
 			answer = "Ничем помочь не могу. Луна не светит на тебя."
 		}
@@ -43,7 +43,7 @@ func cmd(v xmpp.Chat) error {
 			dest = (strings.SplitN(v.Remote, "/", 2))[0]
 		}
 
-		if _, err := talk.Send(
+		if _, err := j.Talk.Send(
 			xmpp.Chat{ //nolint:exhaustruct
 				Remote: dest,
 				Text:   strings.TrimSpace(answer),
@@ -55,7 +55,7 @@ func cmd(v xmpp.Chat) error {
 			return err
 		}
 
-	case v.Text == fmt.Sprintf("%srehash", config.CSign): //nolint:wsl
+	case v.Text == fmt.Sprintf("%srehash", j.C.CSign): //nolint:wsl
 		/* Эта команда может прилетать из приватной беседы с realjid-ом, из приватной беседы с chat-nick-ом, а также из
 		 * чятика.
 		 * Groupchat мы можем определить по v.Type (groupchat) и тогда понятно что делать.
@@ -72,9 +72,9 @@ func cmd(v xmpp.Chat) error {
 				listsLoaded    = true
 			)
 
-			realJID := getRealJIDfromNick(v.Remote)
+			realJID := j.GetRealJIDfromNick(v.Remote)
 
-			for _, master := range config.Jabber.BotMasters {
+			for _, master := range j.C.Jabber.BotMasters {
 				if (strings.SplitN(realJID, "/", 2))[0] == master {
 					chosenOneTalks = true
 				}
@@ -83,7 +83,7 @@ func cmd(v xmpp.Chat) error {
 			if !chosenOneTalks {
 				log.Infof(
 					"Command %srehash given by non-bot_master user %s(%s), ignoring",
-					config.CSign,
+					j.C.CSign,
 					realJID,
 					v.Remote,
 				)
@@ -91,7 +91,7 @@ func cmd(v xmpp.Chat) error {
 				return err
 			}
 
-			if err := readWhitelist(); err != nil {
+			if err := j.ReadWhitelist(); err != nil {
 				listsLoaded = false
 
 				var msg xmpp.Chat
@@ -99,12 +99,12 @@ func cmd(v xmpp.Chat) error {
 				msg.Type = "chat" // private message
 				msg.Text = fmt.Sprint(err)
 
-				if _, err := talk.Send(msg); err != nil {
+				if _, err := j.Talk.Send(msg); err != nil {
 					return err
 				}
 			}
 
-			if err := readBlacklist(); err != nil {
+			if err := j.ReadBlacklist(); err != nil {
 				listsLoaded = false
 
 				var msg xmpp.Chat
@@ -112,7 +112,7 @@ func cmd(v xmpp.Chat) error {
 				msg.Type = "chat" // private message
 				msg.Text = fmt.Sprint(err)
 
-				if _, err := talk.Send(msg); err != nil {
+				if _, err := j.Talk.Send(msg); err != nil {
 					return err
 				}
 			}
@@ -125,7 +125,7 @@ func cmd(v xmpp.Chat) error {
 				msg.Type = v.Type
 				msg.Text = "Сделано"
 
-				if _, err := talk.Send(msg); err != nil {
+				if _, err := j.Talk.Send(msg); err != nil {
 					return err
 				}
 			}
@@ -133,16 +133,16 @@ func cmd(v xmpp.Chat) error {
 			room := (strings.SplitN(v.Remote, "/", 2))[0]
 
 			// Реагировать на приватную команду "из комнаты", только если бот в комнате
-			if slices.Contains(roomsConnected, room) {
+			if slices.Contains(j.RoomsConnected, room) {
 				var (
 					chosenOneTalks = false
 					listsLoaded    = true
 				)
 
 				// Реагировать на rehash только если собеседник является bot master-ом
-				realJID := getRealJIDfromNick(v.Remote)
+				realJID := j.GetRealJIDfromNick(v.Remote)
 
-				for _, master := range config.Jabber.BotMasters {
+				for _, master := range j.C.Jabber.BotMasters {
 					if (strings.SplitN(realJID, "/", 2))[0] == master {
 						chosenOneTalks = true
 					}
@@ -151,7 +151,7 @@ func cmd(v xmpp.Chat) error {
 				if !chosenOneTalks {
 					log.Infof(
 						"Command %srehash given by non-bot_master user %s(%s), ignoring",
-						config.CSign,
+						j.C.CSign,
 						realJID,
 						v.Remote,
 					)
@@ -159,7 +159,7 @@ func cmd(v xmpp.Chat) error {
 					return err
 				}
 
-				if err := readWhitelist(); err != nil {
+				if err := j.ReadWhitelist(); err != nil {
 					listsLoaded = false
 
 					var msg xmpp.Chat
@@ -167,12 +167,12 @@ func cmd(v xmpp.Chat) error {
 					msg.Type = v.Type
 					msg.Text = fmt.Sprint(err)
 
-					if _, err := talk.Send(msg); err != nil {
+					if _, err := j.Talk.Send(msg); err != nil {
 						return err
 					}
 				}
 
-				if err := readBlacklist(); err != nil {
+				if err := j.ReadBlacklist(); err != nil {
 					listsLoaded = false
 
 					var msg xmpp.Chat
@@ -180,7 +180,7 @@ func cmd(v xmpp.Chat) error {
 					msg.Type = v.Type
 					msg.Text = fmt.Sprint(err)
 
-					if _, err := talk.Send(msg); err != nil {
+					if _, err := j.Talk.Send(msg); err != nil {
 						return err
 					}
 				}
@@ -191,7 +191,7 @@ func cmd(v xmpp.Chat) error {
 					msg.Type = v.Type
 					msg.Text = "Сделано"
 
-					if _, err := talk.Send(msg); err != nil {
+					if _, err := j.Talk.Send(msg); err != nil {
 						return err
 					}
 				}

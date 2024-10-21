@@ -1,4 +1,4 @@
-package main
+package jabber
 
 import (
 	"encoding/json"
@@ -15,9 +15,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// parseEvent парсит ивенты, прилетающие из модуля xmpp (изменения presence, фразы участников, ошибки).
-func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
-	lastServerActivity = time.Now().Unix()
+// ParseEvent парсит ивенты, прилетающие из модуля xmpp (изменения presence, фразы участников, ошибки).
+func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
+	j.LastServerActivity = time.Now().Unix()
 
 	switch v := e.(type) {
 	// Сообщение в чяти
@@ -40,28 +40,28 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 				log.Debugf("Message from public chat: %s", v.Text)
 
-				if nick == getBotNickFromRoomConfig(room) {
+				if nick == j.GetBotNickFromRoomConfig(room) {
 					log.Debug("Skipping message from myself")
 
 					return
 				}
 
-				if err := cmd(v); err != nil {
-					gTomb.Kill(err)
+				if err := j.Cmd(v); err != nil {
+					j.GTomb.Kill(err)
 
 					return
 				}
 
-				if err := bunyChat(v); err != nil {
-					gTomb.Kill(err)
+				if err := j.BunyChat(v); err != nil {
+					j.GTomb.Kill(err)
 
 					return
 				}
 
-				lastActivity = lastServerActivity
+				j.LastActivity = j.LastServerActivity
 
 				if muc, _ := strings.CutSuffix(v.Remote, "/"); muc != "" {
-					lastMucActivity.Set(muc, lastServerActivity)
+					j.LastMucActivity.Set(muc, j.LastServerActivity)
 				}
 
 			// Приватный чятик
@@ -71,13 +71,13 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				//  eleksir@jabber.ru/array.lan - это если мы работаем через ростер
 				log.Debugf("Private message: %s", v.Text)
 
-				if err := cmd(v); err != nil {
-					gTomb.Kill(err)
+				if err := j.Cmd(v); err != nil {
+					j.GTomb.Kill(err)
 
 					return
 				}
 
-				lastActivity = lastServerActivity
+				j.LastActivity = j.LastServerActivity
 
 			// Внезапно, ошибки. По идее они должны ассоциироваться с отправляемыми сообщениями, но по ходу это
 			// не реализовано, поэтому мы получаем ошибки в форме отдельного чятика
@@ -102,13 +102,13 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			log.Debug("Looks like IQ get query")
 
 			if muc, _ := strings.CutSuffix(v.To, "/"); muc != "" {
-				if slices.Contains(roomsConnected, muc) {
-					lastMucActivity.Set(muc, lastServerActivity)
+				if slices.Contains(j.RoomsConnected, muc) {
+					j.LastMucActivity.Set(muc, j.LastServerActivity)
 				}
 			}
 
 			var (
-				iqStruct   jabberSimpleIqGetQuery
+				iqStruct   JabberSimpleIqGetQuery
 				parseError bool
 			)
 
@@ -119,7 +119,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				case "jabber:iq:version":
 					log.Infof("Got IQ get request for version from %s", v.From)
 
-					if id, err := talk.IqVersionResponse(
+					if id, err := j.Talk.IqVersionResponse(
 						v,
 						"buny-jabber-bot",
 						"1.dev",
@@ -131,7 +131,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 							err,
 						)
 
-						gTomb.Kill(err)
+						j.GTomb.Kill(err)
 
 						return
 					}
@@ -142,14 +142,14 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				case "urn:xmpp:ping":
 					log.Infof("Got IQ get request for pong from %s", v.From)
 
-					if id, err := talk.PingResponse(v); err != nil {
+					if id, err := j.Talk.PingResponse(v); err != nil {
 						err := fmt.Errorf(
 							"unable to send pong to jabber server: id=%s, err=%w",
 							id,
 							err,
 						)
 
-						gTomb.Kill(err)
+						j.GTomb.Kill(err)
 
 						return
 					}
@@ -161,14 +161,14 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				case "jabber:iq:last":
 					log.Infof("Got IQ get last activity time request from %s", v.From)
 
-					if id, err := talk.JabberIqLastResponse(v, lastActivity); err != nil {
+					if id, err := j.Talk.JabberIqLastResponse(v, j.LastActivity); err != nil {
 						err := fmt.Errorf(
 							"unable to send last activity time to jabber server: id=%s, err=%w",
 							id,
 							err,
 						)
 
-						gTomb.Kill(err)
+						j.GTomb.Kill(err)
 
 						return
 					}
@@ -187,7 +187,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					answer += "<feature var=\"http://jabber.org/protocol/disco#info\" />"
 					answer += "</query>"
 
-					if id, err := talk.RawInformation(
+					if id, err := j.Talk.RawInformation(
 						v.To,
 						v.From,
 						v.ID,
@@ -200,7 +200,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 							err,
 						)
 
-						gTomb.Kill(err)
+						j.GTomb.Kill(err)
 
 						return
 					}
@@ -211,7 +211,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				case xmpp.XMPPNS_DISCO_ITEMS:
 					log.Infof("Got IQ get disco#items request from %s, answer service unavailable", v.From)
 
-					if _, err := talk.ErrorServiceUnavailable(
+					if _, err := j.Talk.ErrorServiceUnavailable(
 						v,
 						"http://jabber.org/protocol/disco#info",
 						"http://jabber.org/protocol/commands",
@@ -222,7 +222,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 							err,
 						)
 
-						gTomb.Kill(err)
+						j.GTomb.Kill(err)
 
 						return
 					}
@@ -242,21 +242,21 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 			// Попробуем распарсить входящий запрос как urn:xmpp:time
 			if parseError {
-				var iqStruct jabberTimeIqGetQuery
+				var iqStruct JabberTimeIqGetQuery
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					switch iqStruct.Xmlns {
 					case "urn:xmpp:time":
 						log.Infof("Got IQ get time request from %s", v.From)
 
-						if id, err := talk.UrnXMPPTimeResponse(v, "+00:00"); err != nil {
+						if id, err := j.Talk.UrnXMPPTimeResponse(v, "+00:00"); err != nil {
 							err := fmt.Errorf(
 								"unable to send urn:xmpp:time to jabber server: id=%s, err=%w",
 								id,
 								err,
 							)
 
-							gTomb.Kill(err)
+							j.GTomb.Kill(err)
 
 							return
 						}
@@ -276,14 +276,14 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 			// Попробуем распарсить входящий запрос как http://jabber.org/protocol/pubsub
 			if parseError {
-				var iqStruct jabberPubsubIQGetQuery
+				var iqStruct JabberPubsubIQGetQuery
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					switch iqStruct.Xmlns {
 					case xmpp.XMPPNS_PUBSUB:
 						log.Infof("Got IQ get pubsub request from %s, answer feature unimplemented", v.From)
 
-						if id, err := talk.ErrorNotImplemented(
+						if id, err := j.Talk.ErrorNotImplemented(
 							v,
 							"http://jabber.org/protocol/pubsub#errors",
 							"subscribe",
@@ -293,7 +293,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 								err,
 							)
 
-							gTomb.Kill(err)
+							j.GTomb.Kill(err)
 
 							return
 						}
@@ -314,19 +314,19 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// Предполагается, что такие респонсы должны приходить только для пинга без серверной оптимизации.
 			// Хотя идейно мы не поддерживаем работу без серверной оптимизации, но на пинг ответим, нам несложно.
 			if parseError {
-				var iqStruct jabberIqPing
+				var iqStruct JabberIqPing
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					log.Debugf("Got IQ get request (actually, response) for MUC Self-Ping from %s", v.From)
 
-					if id, err := talk.PingResponse(v); err != nil {
+					if id, err := j.Talk.PingResponse(v); err != nil {
 						err := fmt.Errorf(
 							"unable to send pong to jabber server: id=%s, err=%w",
 							id,
 							err,
 						)
 
-						gTomb.Kill(err)
+						j.GTomb.Kill(err)
 
 						return
 					}
@@ -343,28 +343,28 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 		case xmpp.IQTypeResult:
 			if muc, _ := strings.CutSuffix(v.To, "/"); muc != "" {
-				if slices.Contains(roomsConnected, muc) {
-					lastMucActivity.Set(muc, lastServerActivity)
+				if slices.Contains(j.RoomsConnected, muc) {
+					j.LastMucActivity.Set(muc, j.LastServerActivity)
 				}
 			}
 
 			switch {
 			// Похоже на pong от сервера (по стандарту в ответе нету query, но go-xmpp нам подсовывает это)
-			case v.From == config.Jabber.Server && v.To == talk.JID() && string(v.Query) == "<XMLElement></XMLElement>":
+			case v.From == j.C.Jabber.Server && v.To == j.Talk.JID() && string(v.Query) == "<XMLElement></XMLElement>":
 				log.Debugf("Got S2C pong answer from %s to %s", v.From, v.To)
-				serverPingTimestampRx = time.Now().Unix() //nolint:wsl
+				j.ServerPingTimestampRx = time.Now().Unix() //nolint:wsl
 
 			// Похоже на понг второй стадии xep-0410 MUC-Ping-а, который у нас не реализован
-			case v.To == talk.JID() && string(v.Query) == "<XMLElement></XMLElement>":
-				mucNameMatch := slices.Contains(roomsConnected, v.From)
+			case v.To == j.Talk.JID() && string(v.Query) == "<XMLElement></XMLElement>":
+				mucNameMatch := slices.Contains(j.RoomsConnected, v.From)
 
 				if mucNameMatch {
 					log.Debugf("Got server-optimized MUC pong answer (xep-0410) from %s to %s", v.From, v.To)
 				} else {
 					mucNickMatch := false
 
-					for _, room := range roomsConnected {
-						mucNick := fmt.Sprintf("%s/%s", room, getBotNickFromRoomConfig(room))
+					for _, room := range j.RoomsConnected {
+						mucNick := fmt.Sprintf("%s/%s", room, j.GetBotNickFromRoomConfig(room))
 
 						if v.From == mucNick {
 							mucNickMatch = true
@@ -383,15 +383,15 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				}
 
 			// Подтверждение бана
-			case v.To == talk.JID() && v.ID == "ban1":
+			case v.To == j.Talk.JID() && v.ID == "ban1":
 				mucNickMatch := false
 
 				// Если ник, которому предназначается сообщение, совпадает с ником, из конфига бота (глобального или для
 				// комнаты), то считаем, что мы есть в этой комнате. Потому что в противном случае в roomsConnected не
 				// будет искомой комнаты и мы не сможем составить ник бота, чтобы сравнить его с тем, кому адресовано
 				// уведомление.
-				for _, room := range roomsConnected {
-					mucNick := fmt.Sprintf("%s/%s", room, getBotNickFromRoomConfig(room))
+				for _, room := range j.RoomsConnected {
+					mucNick := fmt.Sprintf("%s/%s", room, j.GetBotNickFromRoomConfig(room))
 
 					if v.To == mucNick {
 						mucNickMatch = true
@@ -403,7 +403,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				// Формально, ответ должен парситься как пустой result и совпадать с типом jabberSimpleIqGetQuery
 				// Ответ приходит с 2 xmlns, похоже, он парсится неправильно в go-xmpp.
 				// TODO: после исправления go-xmpp, надо исправить это тут
-				var iqStruct jabberSimpleIqGetQuery
+				var iqStruct JabberSimpleIqGetQuery
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					if iqStruct.Xmlns == "http://jabber.org/protocol/muc#admin" && iqStruct.Text == "" {
@@ -432,14 +432,14 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 		// Этот бот не управляется со стороны сервера, поэтому все попытки порулить игнорируем
 		case xmpp.IQTypeSet:
 			if muc, _ := strings.CutSuffix(v.To, "/"); muc != "" {
-				if slices.Contains(roomsConnected, muc) {
-					lastMucActivity.Set(muc, lastServerActivity)
+				if slices.Contains(j.RoomsConnected, muc) {
+					j.LastMucActivity.Set(muc, j.LastServerActivity)
 				}
 			}
 
 			log.Info("Got an IQ request for set something. Answer not implemented")
 
-			if id, err := talk.ErrorNotImplemented(
+			if id, err := j.Talk.ErrorNotImplemented(
 				v,
 				"http://jabber.org/protocol/commands",
 				xmpp.IQTypeSet,
@@ -450,7 +450,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					err,
 				)
 
-				gTomb.Kill(err)
+				j.GTomb.Kill(err)
 
 				return
 			}
@@ -462,18 +462,18 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// Если сервер не хочет пинговаться и отвечает ошибкой на пинг, то наверно он не умеет в пинги,
 			// хотя если мы его пингуем, значит он анонсировал такой capability. Вот, засранец!
 			var (
-				iqPingStruct jabberIqPing
+				iqPingStruct JabberIqPing
 				parseError   = true
 			)
 
 			if err := xml.Unmarshal(v.Query, &iqPingStruct); err == nil {
 				if iqPingStruct.Xmlns == "urn:xmpp:ping" {
-					if v.From == config.Jabber.Server {
+					if v.From == j.C.Jabber.Server {
 						msg := "Server announced that it can answer c2s ping, but gives us an error to such query, "
 						msg += "fallback to keepalive whitespace pings"
 						log.Error(msg)
 
-						serverCapsList.Set("urn:xmpp:ping", false)
+						j.ServerCapsList.Set("urn:xmpp:ping", false)
 					} else {
 						log.Errorf("Got 'ping unsupported' message from: %s to: %s", v.From, v.To)
 					}
@@ -487,30 +487,30 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 			// Это у нас пинг xep-0410 и мы не в комнате, предполагается, что надо бы заджойниться
 			if parseError {
-				var iqErrorCancelNotAcceptable jabberIqErrorCancelNotAcceptable
+				var iqErrorCancelNotAcceptable JabberIqErrorCancelNotAcceptable
 
 				if err := xml.Unmarshal(v.Query, &iqErrorCancelNotAcceptable); err == nil {
-					if v.To == talk.JID() {
+					if v.To == j.Talk.JID() {
 						nick := strings.SplitN(v.From, "/", 2)[1]
 						room := strings.SplitN(v.From, "/", 2)[0]
 
-						if slices.Contains(roomsConnected, iqErrorCancelNotAcceptable.By) &&
-							nick == getBotNickFromRoomConfig(room) {
+						if slices.Contains(j.RoomsConnected, iqErrorCancelNotAcceptable.By) &&
+							nick == j.GetBotNickFromRoomConfig(room) {
 
 							log.Errorf(
 								"Got Iq error message from: %s to: %s. Looks like i'm not in MUC anymore",
 								v.From, v.To,
 							)
 
-							time.Sleep(time.Duration(config.Jabber.MucRejoinDelay) * time.Second)
+							time.Sleep(time.Duration(j.C.Jabber.MucRejoinDelay) * time.Second)
 
-							if _, err := talk.JoinMUCNoHistory(iqErrorCancelNotAcceptable.By, nick); err != nil {
+							if _, err := j.Talk.JoinMUCNoHistory(iqErrorCancelNotAcceptable.By, nick); err != nil {
 								err := fmt.Errorf(
 									"looks like connection to server also lost err=%w",
 									err,
 								)
 
-								gTomb.Kill(err)
+								j.GTomb.Kill(err)
 
 								return
 							}
@@ -546,8 +546,8 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 	// Смена статуса участника
 	case xmpp.Presence:
 		if muc, _ := strings.CutSuffix(v.To, "/"); muc != "" {
-			if slices.Contains(roomsConnected, muc) {
-				lastMucActivity.Set(muc, lastServerActivity)
+			if slices.Contains(j.RoomsConnected, muc) {
+				j.LastMucActivity.Set(muc, j.LastServerActivity)
 			}
 		}
 
@@ -559,12 +559,12 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// Однако, это не значит, что такую ситуацию мы не должны корректным образом обрабатывать.
 			if v.Type == "unavailable" {
 				// Считаем, что мы больше не в комнате, поэтому не знаем, кто там есть
-				roomPresences.Delete(v.From)
+				j.RoomPresences.Delete(v.From)
 
 				log.Error("Presence notification - looks like another instance of client leaves room")
 
-				if slices.Contains(roomsConnected, v.From) {
-					go joinMuc(v.From)
+				if slices.Contains(j.RoomsConnected, v.From) {
+					go j.JoinMuc(v.From)
 				}
 			} else {
 				log.Errorf("Presence notification, Type: %s, From: %s, Show: %s, Status: %s",
@@ -588,19 +588,19 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 			// Это наш собственный Presence
 			if v.Show == "" && v.Status == "" {
-				if nick == getBotNickFromRoomConfig(room) {
-					roomsConnected = append(roomsConnected, room)
+				if nick == j.GetBotNickFromRoomConfig(room) {
+					j.RoomsConnected = append(j.RoomsConnected, room)
 					// На всякий случай дедуплицируем список комнат, к которым мы заджойнились.
-					sort.Strings(roomsConnected)
-					slices.Compact(roomsConnected)
+					sort.Strings(j.RoomsConnected)
+					slices.Compact(j.RoomsConnected)
 				}
 			}
 
 			switch v.Role {
 			// Участник ушёл
 			case "none":
-				if presenceJSONInterface, present := roomPresences.Get(room); present {
-					presenceJSONStrings := interfaceToStringSlice(presenceJSONInterface)
+				if presenceJSONInterface, present := j.RoomPresences.Get(room); present {
+					presenceJSONStrings := InterfaceToStringSlice(presenceJSONInterface)
 
 					var newPresenceJSONStrings []string
 
@@ -615,7 +615,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 						newPresenceJSONStrings = append(newPresenceJSONStrings, presenceJSONstring)
 					}
 
-					roomPresences.Set(room, newPresenceJSONStrings)
+					j.RoomPresences.Set(room, newPresenceJSONStrings)
 				}
 			// Участник пришёл
 			default:
@@ -625,8 +625,8 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					presenceJSONBytes      []byte
 				)
 
-				if presenceJSONInterface, present := roomPresences.Get(room); present {
-					presenceJSONStrings = interfaceToStringSlice(presenceJSONInterface)
+				if presenceJSONInterface, present := j.RoomPresences.Get(room); present {
+					presenceJSONStrings = InterfaceToStringSlice(presenceJSONInterface)
 				}
 
 				for _, presenceJSONString := range presenceJSONStrings {
@@ -644,16 +644,16 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 				presenceJSONBytes, _ = json.Marshal(v) //nolint:errchkjson
 				newPresenceJSONStrings = append(newPresenceJSONStrings, string(presenceJSONBytes))
-				roomPresences.Set(room, newPresenceJSONStrings)
+				j.RoomPresences.Set(room, newPresenceJSONStrings)
 			}
 
 			// Проверяем, а не злодей ли зашёл? Сделать это мы можем, только если мы находимся в комнате.
 			// По правилам, мы можем что-то делать, только после того, как нам прилетит наш собственный presence, это
 			// значит, что мы вошли в комнату.
-			if slices.Contains(roomsConnected, room) {
+			if slices.Contains(j.RoomsConnected, room) {
 				if v.Affiliation != "outcast" {
-					if err := bunyPresense(v); err != nil {
-						gTomb.Kill(err)
+					if err := j.BunyPresense(v); err != nil {
+						j.GTomb.Kill(err)
 
 						return
 					}
@@ -664,8 +664,8 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 	// Ответ на запрос поддерживаемых фич, который "http://jabber.org/protocol/disco#info"
 	case xmpp.DiscoResult:
 		if muc, _ := strings.CutSuffix(v.To, "/"); muc != "" {
-			if slices.Contains(roomsConnected, muc) {
-				lastMucActivity.Set(muc, lastServerActivity)
+			if slices.Contains(j.RoomsConnected, muc) {
+				j.LastMucActivity.Set(muc, j.LastServerActivity)
 			}
 		}
 
@@ -677,10 +677,10 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				// Конкретно сейчас нас интересует только поддержка c2s ping
 				for _, feature := range v.Features {
 					log.Debugf("Server %s announced that it supports feature: %s", v.From, feature)
-					serverCapsList.Set(feature, true)
+					j.ServerCapsList.Set(feature, true)
 				}
 
-				serverCapsQueried = true
+				j.ServerCapsQueried = true
 
 			case "conference":
 				mucCaps := make(map[string]bool)
@@ -690,7 +690,7 @@ func parseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					mucCaps[feature] = true //nolint:wsl
 				}
 
-				mucCapsList.Set(v.From, mucCaps)
+				j.MucCapsList.Set(v.From, mucCaps)
 
 			case "pubsub":
 				log.Debugf("PubSub component %s reply to disco#info, skipping", v.From)

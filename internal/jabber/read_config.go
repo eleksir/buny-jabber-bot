@@ -1,4 +1,4 @@
-package main
+package jabber
 
 import (
 	"encoding/json"
@@ -11,9 +11,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// readConfig читает и валидирует конфиг, а также выставляет некоторые default-ы, если значений для параметров в конфиге
+// ReadConfig читает и валидирует конфиг, а также выставляет некоторые default-ы, если значений для параметров в конфиге
 // нет.
-func readConfig() error { //nolint:gocognit,gocyclo
+func (j *Jabber) ReadConfig() error { //nolint:gocognit,gocyclo
 	var (
 		err            error
 		executablePath string
@@ -31,9 +31,9 @@ func readConfig() error { //nolint:gocognit,gocyclo
 	configJSONPath := fmt.Sprintf("%s/data/config.json", filepath.Dir(executablePath))
 
 	locations := []string{
-		"~/.bunyPresense-jabber-bot.json",
-		"~/bunyPresense-jabber-bot.json",
-		"/etc/bunyPresense-jabber-bot.json",
+		"~/.buny-jabber-bot.json",
+		"~/buny-jabber-bot.json",
+		"/etc/buny-jabber-bot.json",
 		configJSONPath,
 	}
 
@@ -65,7 +65,7 @@ func readConfig() error { //nolint:gocognit,gocyclo
 		// Интереснее на выходе получить структурку: то есть мы вначале конфиг преобразуем в map-ку, затем эту map-ку
 		// сериализуем в json, а потом json превращаем в структурку. Не очень эффективно, но он и нечасто требуется.
 		var (
-			sampleConfig myConfig
+			sampleConfig MyConfig
 			tmp          map[string]interface{}
 		)
 
@@ -262,7 +262,7 @@ func readConfig() error { //nolint:gocognit,gocyclo
 
 		// sampleConfig.Log = "" if not set
 
-		config = sampleConfig
+		j.C = sampleConfig
 		configLoaded = true
 
 		log.Infof("Using %s as config file", location)
@@ -276,3 +276,5 @@ func readConfig() error { //nolint:gocognit,gocyclo
 
 	return err //nolint:wrapcheck
 }
+
+/* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

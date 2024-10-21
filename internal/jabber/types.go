@@ -1,11 +1,15 @@
-package main
+package jabber
 
 import (
 	"encoding/xml"
+	"os"
+
+	"github.com/eleksir/go-xmpp"
+	"gopkg.in/tomb.v1"
 )
 
-// myConfig прототип структурки с конфигом.
-type myConfig struct {
+// MyConfig прототип структурки с конфигом.
+type MyConfig struct {
 	Jabber struct {
 		Server                       string   `json:"server,omitempty"`
 		Port                         int      `json:"port,omitempty"`
@@ -56,8 +60,8 @@ type myConfig struct {
 	Log      string `json:"log,omitempty"`
 }
 
-// myWhiteList прототип структурки с белым списком jid-ов.
-type myWhiteList struct {
+// MyWhiteList прототип структурки с белым списком jid-ов.
+type MyWhiteList struct {
 	Whitelist []struct {
 		RoomName string   `json:"room_name,omitempty"`
 		Jid      []string `json:"jid,omitempty"`
@@ -65,8 +69,8 @@ type myWhiteList struct {
 	} `json:"whitelist,omitempty"`
 }
 
-// myBlackList прототип структурки с чёрным списком jid-ов.
-type myBlackList struct {
+// MyBlackList прототип структурки с чёрным списком jid-ов.
+type MyBlackList struct {
 	Blacklist []struct {
 		RoomName     string   `json:"room_name,omitempty"`
 		ReasonEnable bool     `json:"reason_enable,omitempty"`
@@ -76,17 +80,82 @@ type myBlackList struct {
 	} `json:"blacklist,omitempty"`
 }
 
-// jabberSimpleIqGetQuery прототип структурки для разбора запросов xmpp discovery query, например,
+// Jabber основная структура-объект, содержащая стейты и проч.
+type Jabber struct {
+	// C - конфиг, как он распарсился из конфиг-файла.
+	C MyConfig
+
+	// WhiteList - структурка с безусловно разрешёнными jid-ами
+	WhiteList MyWhiteList
+
+	// BlackList - структурка с запрещёнными по регуляркам фразами, никами, jid-ами.
+	BlackList MyBlackList
+
+	// Опции подключения к xmpp-серверу.
+	Options *xmpp.Options
+
+	// gTomb пул активных горутин.
+	GTomb tomb.Tomb
+
+	// Talk основная структурка xmpp-клиента.
+	Talk *xmpp.Client
+
+	// sync.Map-ка с капабилити сервера.
+	ServerCapsList *Collection
+
+	// ServerCapsQueried показывает, были ли запрошены capabilities сервера.
+	ServerCapsQueried bool
+
+	// Время последней активности, нужно для c2s пингов - посылаем пинги, только если давненько ничего не приходило с
+	// сервера.
+	LastServerActivity int64
+
+	// Время, когда был отправлен c2s ping.
+	ServerPingTimestampTx int64
+
+	// Время, когда был принят s2c pong.
+	ServerPingTimestampRx int64
+
+	// Время последней активности, нужно для jabber:iq:last.
+	LastActivity int64
+
+	// sync.Map-ка с комнатами и их capability.
+	MucCapsList *Collection
+
+	// Время последней активности MUC-ов, нужно для пингов - посылаем пинги, только если давненько ничего не приходило из
+	// muc-ов.
+	LastMucActivity *Collection
+
+	// Список комнат, в которых находится бот.
+	RoomsConnected []string
+
+	// sync.Map-ка со списком участников конференций (в json-формате, согласно структуре xmpp.Presence, "room".[]json).
+	RoomPresences *Collection
+
+	// Канал, по котором приходят сообщения о том, что ОС отправила некие сигналы процессу.
+	SigChan chan os.Signal
+
+	// Индиктор того, что процесс завершается.
+	Shutdown bool
+
+	// Индиктор того, что соединение установлено.
+	IsConnected bool
+
+	// Индикатор того, что соединение в процессе достукивания до сервера.
+	Connecting bool
+}
+
+// JabberSimpleIqGetQuery прототип структурки для разбора запросов xmpp discovery query, например,
 // https://xmpp.org/extensions/xep-0030.html#example-18 .
-type jabberSimpleIqGetQuery struct {
+type JabberSimpleIqGetQuery struct {
 	XMLName xml.Name `xml:"query"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
 	Node    string   `xml:"node,attr,omitempty"` // для xmlns="http://jabber.org/protocol/disco#items"
 }
 
-// jabberPubsubIQGetQuery прототип структурки для разбора запросов xmpp pubsub.
-type jabberPubsubIQGetQuery struct {
+// JabberPubsubIQGetQuery прототип структурки для разбора запросов xmpp pubsub.
+type JabberPubsubIQGetQuery struct {
 	XMLName xml.Name `xml:"pubsub"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
@@ -97,25 +166,25 @@ type jabberPubsubIQGetQuery struct {
 	} `xml:"items"`
 }
 
-// jabberTimeIqGetQuery прототип структурки для разбора IQ запросов на локальное время клиента,
+// JabberTimeIqGetQuery прототип структурки для разбора IQ запросов на локальное время клиента,
 // https://xmpp.org/extensions/xep-0202.html
-type jabberTimeIqGetQuery struct {
+type JabberTimeIqGetQuery struct {
 	// <time xmlns="urn:xmpp:time"/>
 	XMLName xml.Name `xml:"time"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
 }
 
-// jabberIqPing прототип структурки для разбора IQ запросов на пинг клиента, https://xmpp.org/extensions/xep-0199.html
-type jabberIqPing struct {
+// JabberIqPing прототип структурки для разбора IQ запросов на пинг клиента, https://xmpp.org/extensions/xep-0199.html
+type JabberIqPing struct {
 	XMLName xml.Name `xml:"ping"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
 }
 
-// jabberIqErrorCancelNotAcceptable прототип структурки для разбора IQ ответов, когда сервис (сервер, клиент, etc) не
+// JabberIqErrorCancelNotAcceptable прототип структурки для разбора IQ ответов, когда сервис (сервер, клиент, etc) не
 // может или не хочет принимать наш iq-запрос https://xmpp.org/extensions/xep-0099.html
-type jabberIqErrorCancelNotAcceptable struct {
+type JabberIqErrorCancelNotAcceptable struct {
 	XMLName       xml.Name `xml:"error"`
 	Text          string   `xml:",chardata"`
 	Type          string   `xml:"type,attr"`
