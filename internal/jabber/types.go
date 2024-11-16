@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/eleksir/go-xmpp"
-	"gopkg.in/tomb.v1"
+	"gopkg.in/tomb.v2"
 )
 
 // MyConfig прототип структурки с конфигом.

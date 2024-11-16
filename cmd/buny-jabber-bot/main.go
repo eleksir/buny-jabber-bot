@@ -11,7 +11,7 @@ import (
 
 	"github.com/eleksir/go-xmpp"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/tomb.v1"
+	"gopkg.in/tomb.v2"
 )
 
 // main - фактичеcки, начало и основное тело программы.
@@ -118,7 +118,7 @@ func main() {
 		}
 
 		// Устанавливаем соединение и гребём события, посылаемые сервером - основной и вспомогательные циклы программы.
-		j.MyLoop()
+		j.GTomb.Go(func() error { return j.MyLoop() })
 
 		// Логгируем причину завершения mainLoop и вспомогательных циклов программы.
 		log.Error(j.GTomb.Wait())
