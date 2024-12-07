@@ -2,6 +2,8 @@ package jabber
 
 import (
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // MyLoop - основной цикл программы.
@@ -23,13 +25,21 @@ func (j *Jabber) MyLoop() error {
 
 		// Установим коннект
 		if err := j.EstablishConnection(); err != nil {
+			log.Error(err)
+
 			return err
 		}
 
 		j.ServerPingTimestampRx = time.Now().Unix() // Считаем, что если коннект запустился, то первый пинг успешен.
 
 		// Тыкаем сервер палочкой, проверяем, что коннект жив и вываливаемся из mainLoop, если он не жив.
-		j.GTomb.Go(func() error { return j.ProbeServerLiveness() })
+		j.GTomb.Go(
+			func() error {
+				err := j.ProbeServerLiveness()
+				log.Error(err)
+				return err
+			},
+		)
 
 		// Тыкаем muc-и палочкой, проверяем, что они живы и вываливаемся из mainLoop, если пинги пропали.
 		// Если пинги до комнаты пропали, то это фактически значит, что либо сервер потерял связь с MUC-компонентом,
@@ -56,6 +66,8 @@ func (j *Jabber) MyLoop() error {
 			chat, err := j.Talk.Recv()
 
 			if err != nil {
+				log.Errorf("Unable to get recieve data from socket: %s", err)
+
 				return err
 			}
 

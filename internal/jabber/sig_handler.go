@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (j *Jabber) SigHandler() {
+func (j *Jabber) SigHandler() error {
 	log.Debug("Installing signal handler")
 
 	for s := range j.SigChan {
@@ -55,4 +55,6 @@ func (j *Jabber) SigHandler() {
 
 		os.Exit(0)
 	}
+
+	return nil
 }
