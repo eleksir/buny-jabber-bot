@@ -224,12 +224,12 @@ func (j *Jabber) EstablishConnection() error {
 	j.Talk, err = j.Options.NewClient()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to connect to %s: %w", j.Options.Host, err)
 	}
 
 	// По идее keepalive должен же проходить только, если мы уже на сервере, так?
 	if _, err := j.Talk.SendKeepAlive(); err != nil {
-		return fmt.Errorf("Try to send initial KeepAlive, got error: %s", err)
+		return fmt.Errorf("Try to send initial KeepAlive, got error: %w", err)
 	}
 
 	log.Info("Connected")
