@@ -1,11 +1,12 @@
 run:
   tests: false
-  skip-dirs:
-    - data
-    - vendor
   modules-download-mode: readonly
   allow-parallel-runners: true
-  go: '1.21'
+  go: '1.24'
+issues:
+  exclude-dirs:
+    - data
+    - vendor
 output:
   sort-results: true
 linters-settings:
@@ -34,13 +35,12 @@ linters:
     - errorlint
     - exhaustive
     - exhaustruct
-    - exportloopref
+    - copyloopvar
     - ginkgolinter
-    - gci
     - gocheckcompilerdirectives
     - gocritic
     - godot
-    - goerr113
+    - err113
     - gofmt
     - goimports
     - gosec

@@ -37,6 +37,7 @@ func (j *Jabber) MyLoop() error {
 			func() error {
 				err := j.ProbeServerLiveness()
 				log.Error(err)
+
 				return err
 			},
 		)

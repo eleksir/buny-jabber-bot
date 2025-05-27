@@ -44,7 +44,7 @@ func nString(buf string) string {
 }
 
 // Обёртка для nString, возвращает нормализованную строку в нижнем регистре.
-func nStringLower(buf string) string {
+func nStringLower(buf string) string { //nolint:unused
 	return strings.ToLower(nString(buf))
 }
 

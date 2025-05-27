@@ -76,3 +76,5 @@ func (j *Jabber) Squash(room, jid string, reasonEnable bool, vType string) (stri
 
 	return id, err
 }
+
+/* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

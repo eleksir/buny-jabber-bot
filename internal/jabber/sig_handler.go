@@ -58,3 +58,5 @@ func (j *Jabber) SigHandler() error {
 
 	return nil
 }
+
+/* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

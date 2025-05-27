@@ -208,3 +208,5 @@ func (j *Jabber) Cmd(v xmpp.Chat) error {
 
 	return err
 }
+
+/* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

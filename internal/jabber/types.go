@@ -145,17 +145,17 @@ type Jabber struct {
 	Connecting bool
 }
 
-// JabberSimpleIqGetQuery прототип структурки для разбора запросов xmpp discovery query, например,
+// SimpleIqGetQuery прототип структурки для разбора запросов xmpp discovery query, например,
 // https://xmpp.org/extensions/xep-0030.html#example-18 .
-type JabberSimpleIqGetQuery struct {
+type SimpleIqGetQuery struct {
 	XMLName xml.Name `xml:"query"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
 	Node    string   `xml:"node,attr,omitempty"` // для xmlns="http://jabber.org/protocol/disco#items"
 }
 
-// JabberPubsubIQGetQuery прототип структурки для разбора запросов xmpp pubsub.
-type JabberPubsubIQGetQuery struct {
+// PubsubIQGetQuery прототип структурки для разбора запросов xmpp pubsub.
+type PubsubIQGetQuery struct {
 	XMLName xml.Name `xml:"pubsub"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
@@ -166,25 +166,25 @@ type JabberPubsubIQGetQuery struct {
 	} `xml:"items"`
 }
 
-// JabberTimeIqGetQuery прототип структурки для разбора IQ запросов на локальное время клиента,
+// TimeIqGetQuery прототип структурки для разбора IQ запросов на локальное время клиента,
 // https://xmpp.org/extensions/xep-0202.html
-type JabberTimeIqGetQuery struct {
+type TimeIqGetQuery struct {
 	// <time xmlns="urn:xmpp:time"/>
 	XMLName xml.Name `xml:"time"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
 }
 
-// JabberIqPing прототип структурки для разбора IQ запросов на пинг клиента, https://xmpp.org/extensions/xep-0199.html
-type JabberIqPing struct {
+// IqPing прототип структурки для разбора IQ запросов на пинг клиента, https://xmpp.org/extensions/xep-0199.html
+type IqPing struct {
 	XMLName xml.Name `xml:"ping"`
 	Text    string   `xml:",chardata"`
 	Xmlns   string   `xml:"xmlns,attr"`
 }
 
-// JabberIqErrorCancelNotAcceptable прототип структурки для разбора IQ ответов, когда сервис (сервер, клиент, etc) не
+// IqErrorCancelNotAcceptable прототип структурки для разбора IQ ответов, когда сервис (сервер, клиент, etc) не
 // может или не хочет принимать наш iq-запрос https://xmpp.org/extensions/xep-0099.html
-type JabberIqErrorCancelNotAcceptable struct {
+type IqErrorCancelNotAcceptable struct {
 	XMLName       xml.Name `xml:"error"`
 	Text          string   `xml:",chardata"`
 	Type          string   `xml:"type,attr"`

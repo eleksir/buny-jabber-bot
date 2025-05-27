@@ -108,7 +108,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			}
 
 			var (
-				iqStruct   JabberSimpleIqGetQuery
+				iqStruct   SimpleIqGetQuery
 				parseError bool
 			)
 
@@ -244,7 +244,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 			// Попробуем распарсить входящий запрос как urn:xmpp:time
 			if parseError {
-				var iqStruct JabberTimeIqGetQuery
+				var iqStruct TimeIqGetQuery
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					switch iqStruct.Xmlns {
@@ -278,7 +278,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 			// Попробуем распарсить входящий запрос как http://jabber.org/protocol/pubsub
 			if parseError {
-				var iqStruct JabberPubsubIQGetQuery
+				var iqStruct PubsubIQGetQuery
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					switch iqStruct.Xmlns {
@@ -316,7 +316,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// Предполагается, что такие респонсы должны приходить только для пинга без серверной оптимизации.
 			// Хотя идейно мы не поддерживаем работу без серверной оптимизации, но на пинг ответим, нам несложно.
 			if parseError {
-				var iqStruct JabberIqPing
+				var iqStruct IqPing
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					log.Debugf("Got IQ get request (actually, response) for MUC Self-Ping from %s", v.From)
@@ -377,8 +377,8 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 					if mucNickMatch {
 						log.Debugf("Got 2-nd stage MUC pong answer (xep-0410) from %s to %s", v.From, v.To)
-						// Поскольку никакой логики у нас на этот счёт не предусмотрено, то просто пропускаем ответ
 					} else {
+						// Поскольку никакой логики у нас на этот счёт не предусмотрено, то просто пропускаем ответ
 						log.Infof("Got unknown pong from %s to %s", v.From, v.To)
 						log.Debug(spew.Sdump(e))
 					}
@@ -405,11 +405,10 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				// Формально, ответ должен парситься как пустой result и совпадать с типом jabberSimpleIqGetQuery
 				// Ответ приходит с 2 xmlns, похоже, он парсится неправильно в go-xmpp.
 				// TODO: после исправления go-xmpp, надо исправить это тут
-				var iqStruct JabberSimpleIqGetQuery
+				var iqStruct SimpleIqGetQuery
 
 				if err := xml.Unmarshal(v.Query, &iqStruct); err == nil {
 					if iqStruct.Xmlns == "http://jabber.org/protocol/muc#admin" && iqStruct.Text == "" {
-
 						if mucNickMatch {
 							// Поскольку никакой логики у нас на этот счёт не предусмотрено, то просто пропускаем ответ
 							log.Infof("Got ban successful from %s to %s", v.From, v.To)
@@ -464,7 +463,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			// Если сервер не хочет пинговаться и отвечает ошибкой на пинг, то наверно он не умеет в пинги,
 			// хотя если мы его пингуем, значит он анонсировал такой capability. Вот, засранец!
 			var (
-				iqPingStruct JabberIqPing
+				iqPingStruct IqPing
 				parseError   = true
 			)
 
@@ -489,7 +488,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 			// Это у нас пинг xep-0410 и мы не в комнате, предполагается, что надо бы заджойниться
 			if parseError {
-				var iqErrorCancelNotAcceptable JabberIqErrorCancelNotAcceptable
+				var iqErrorCancelNotAcceptable IqErrorCancelNotAcceptable
 
 				if err := xml.Unmarshal(v.Query, &iqErrorCancelNotAcceptable); err == nil {
 					if v.To == j.Talk.JID() {
@@ -498,7 +497,6 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 						if slices.Contains(j.RoomsConnected, iqErrorCancelNotAcceptable.By) &&
 							nick == j.GetBotNickFromRoomConfig(room) {
-
 							log.Errorf(
 								"Got Iq error message from: %s to: %s. Looks like i'm not in MUC anymore",
 								v.From, v.To,
@@ -571,7 +569,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 			} else {
 				log.Errorf("Presence notification, Type: %s, From: %s, Show: %s, Status: %s",
 					v.Type, v.From, v.Show, v.Status)
-				log.Errorf(spew.Sdump(v))
+				log.Error(spew.Sdump(v))
 			}
 		} else {
 			log.Infof(

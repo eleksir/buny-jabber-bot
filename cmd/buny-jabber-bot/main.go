@@ -17,7 +17,7 @@ import (
 // main - фактичеcки, начало и основное тело программы.
 func main() {
 	for {
-		var j = jabber.Jabber{
+		var j = jabber.Jabber{ //nolint:exhaustruct
 			SigChan:        make(chan os.Signal, 1),
 			GTomb:          tomb.Tomb{},
 			RoomsConnected: make([]string, 1),
@@ -92,7 +92,7 @@ func main() {
 		xmpp.DebugWriter = log.WithFields(log.Fields{"logger": "stdlib"}).WriterLevel(log.TraceLevel)
 
 		// Хэндлер сигналов.
-		j.GTomb.Go(func() error { return j.SigHandler() })
+		j.GTomb.Go(func() error { return j.SigHandler() }) //nolint: gocritic
 
 		signal.Notify(j.SigChan, os.Interrupt)
 
@@ -120,10 +120,10 @@ func main() {
 		// запустить все асинхронные процессы заново, с чистого листа, но уже с распарсенным конфигом.
 
 		// Устанавливаем соединение и гребём события, посылаемые сервером - основной и вспомогательные циклы программы.
-		j.GTomb.Go(func() error { return j.MyLoop() })
+		j.GTomb.Go(func() error { return j.MyLoop() }) //nolint: gocritic
 
 		// Ловим первый же kill и не дождаемся остальных, хотя формально надо бы.
-		_ = <-j.GTomb.Dying()
+		<-j.GTomb.Dying()
 
 		// Если у нас wire error, то вызов .Close() повлечёт за собой ошибку. А если у нас не wire error, то по ходу мы
 		// получим утечку сокетов.

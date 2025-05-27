@@ -107,7 +107,7 @@ func (j *Jabber) RotateStatus(room string) error {
 			}
 
 			if _, err := j.Talk.SendPresence(p); err != nil {
-				return fmt.Errorf("Unable to send presence to MUC %s: %s", room, err)
+				return fmt.Errorf("unable to send presence to MUC %s: %w", room, err)
 			}
 
 			// Если мы не хотим ротировать, то цикл нам тут не нужен, просто выходим.
@@ -125,7 +125,7 @@ func (j *Jabber) JoinMuc(room string) error {
 	log.Debugf("Sending disco#info from %s to %s", j.Talk.JID(), room)
 
 	if _, err := j.Talk.DiscoverInfo(j.Talk.JID(), room); err != nil {
-		return fmt.Errorf("Unable to send disco#info to MUC %s: %s", room, err)
+		return fmt.Errorf("unable to send disco#info to MUC %s: %w", room, err)
 	}
 
 	// Ждём, пока muc нам вернёт список фичей.
@@ -156,7 +156,7 @@ func (j *Jabber) JoinMuc(room string) error {
 
 	// Заходим в конфу, наконец-то
 	if _, err := j.Talk.JoinMUCNoHistory(room, j.GetBotNickFromRoomConfig(room)); err != nil {
-		return fmt.Errorf("Unable to join to MUC: %s, %w", room, err)
+		return fmt.Errorf("unable to join to MUC: %s, %w", room, err)
 	}
 
 	log.Infof("Joining to MUC: %s", room)
@@ -224,12 +224,12 @@ func (j *Jabber) EstablishConnection() error {
 	j.Talk, err = j.Options.NewClient()
 
 	if err != nil {
-		return fmt.Errorf("Unable to connect to %s: %w", j.Options.Host, err)
+		return fmt.Errorf("unable to connect to %s: %w", j.Options.Host, err)
 	}
 
 	// По идее keepalive должен же проходить только, если мы уже на сервере, так?
 	if _, err := j.Talk.SendKeepAlive(); err != nil {
-		return fmt.Errorf("Try to send initial KeepAlive, got error: %w", err)
+		return fmt.Errorf("try to send initial KeepAlive, got error: %w", err)
 	}
 
 	log.Info("Connected")
@@ -237,6 +237,7 @@ func (j *Jabber) EstablishConnection() error {
 	// Джойнимся к чятикам, но делаем это в фоне, чтобы не блочиться на ошибках, например, если бота забанили
 	for _, roomStruct := range j.C.Jabber.Channels {
 		room := roomStruct.Name
+
 		j.GTomb.Go(func() error { return j.JoinMuc(room) })
 	}
 
@@ -251,7 +252,7 @@ func (j *Jabber) EstablishConnection() error {
 	_, err = j.Talk.DiscoverInfo(j.Talk.JID(), j.C.Jabber.Server)
 
 	if err != nil {
-		return fmt.Errorf("Unable to send disco#info to jabber server: %s", err)
+		return fmt.Errorf("unable to send disco#info to jabber server: %w", err)
 	}
 
 	return nil
@@ -409,6 +410,7 @@ func (j *Jabber) ProbeMUCLiveness() { //nolint:gocognit
 
 						if e := j.Talk.PingS2S(j.Talk.JID(), room); e != nil {
 							err = fmt.Errorf("unable to ping MUC %s: %w", room, e)
+
 							return err
 						}
 

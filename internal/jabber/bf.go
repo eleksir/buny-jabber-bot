@@ -20,7 +20,7 @@ const (
 )
 
 // Выдаёт "очки похожести" для данной фразы.
-func checkPhrase(s string) error {
+func checkPhrase(s string) error { //nolint: unused
 	classifier, err := bayesian.NewClassifierFromFile(dataFile)
 
 	if err != nil {
@@ -37,7 +37,7 @@ func checkPhrase(s string) error {
 }
 
 // Выучивает слова из предопределённых словарей.
-func learn() error {
+func learn() error { //nolint: unused
 	classifier := bayesian.NewClassifier(Bad, Good)
 
 	if err := feed(classifier, goodDictionaryFile, Good); err != nil {
@@ -56,7 +56,7 @@ func learn() error {
 }
 
 // Дополняет заданный класс фразами из указанного файла.
-func feed(c *bayesian.Classifier, filename string, bc bayesian.Class) error {
+func feed(c *bayesian.Classifier, filename string, bc bayesian.Class) error { //nolint:unused
 	fh, err := os.Open(filename)
 
 	if err != nil {
@@ -98,3 +98,5 @@ func feed(c *bayesian.Classifier, filename string, bc bayesian.Class) error {
 
 	return nil
 }
+
+/* vim: set ft=go noet ai ts=4 sw=4 sts=4: */
