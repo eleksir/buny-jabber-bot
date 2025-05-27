@@ -30,9 +30,10 @@ func (j *Jabber) Cmd(v xmpp.Chat) error {
 		}
 
 		if chosenOneTalks {
-			answer = fmt.Sprintf("%sпомощь - этот список команд\n", j.C.CSign)
-			answer += fmt.Sprintf("%shelp   - this commands list\n", j.C.CSign)
-			answer += fmt.Sprintf("%srehash - reload white and black lists", j.C.CSign)
+			answer = fmt.Sprintf("%sпомощь       - этот список команд\n", j.C.CSign)
+			answer += fmt.Sprintf("%shelp         - this commands list\n", j.C.CSign)
+			answer += fmt.Sprintf("%srehash       - reload white and black lists (available to bot admins only)\n", j.C.CSign)
+			answer += fmt.Sprintf("%sver|%sversion - prints version of software", j.C.CSign, j.C.CSign)
 		} else {
 			answer = "Ничем помочь не могу. Луна не светит на тебя."
 		}
@@ -87,6 +88,13 @@ func (j *Jabber) Cmd(v xmpp.Chat) error {
 					realJID,
 					v.Remote,
 				)
+
+				var msg xmpp.Chat
+				msg.Remote = v.Remote
+				msg.Type = v.Type
+				msg.Text = "Ничем помочь не могу. Луна не светит на тебя."
+
+				_, err := j.Talk.Send(msg)
 
 				return err
 			}
@@ -156,6 +164,13 @@ func (j *Jabber) Cmd(v xmpp.Chat) error {
 						v.Remote,
 					)
 
+					var msg xmpp.Chat
+					msg.Remote = v.Remote
+					msg.Type = v.Type
+					msg.Text = "Ничем помочь не могу. Луна не светит на тебя."
+
+					_, err := j.Talk.Send(msg)
+
 					return err
 				}
 
@@ -202,6 +217,29 @@ func (j *Jabber) Cmd(v xmpp.Chat) error {
 		}
 
 		return err
+	case v.Text == fmt.Sprintf("%sver", j.C.CSign) || v.Text == fmt.Sprintf("%sversion", j.C.CSign):
+		var (
+			answer = fmt.Sprintf("Version %s", j.C.Version)
+		)
+
+		dest := v.Remote
+
+		if v.Type == "groupchat" {
+			dest = (strings.SplitN(v.Remote, "/", 2))[0]
+		}
+
+		if _, err := j.Talk.Send(
+			xmpp.Chat{ //nolint:exhaustruct
+				Remote: dest,
+				Text:   strings.TrimSpace(answer),
+				Type:   v.Type,
+			},
+		); err != nil {
+			err = fmt.Errorf("unable to send message to %s: %w", v.Remote, err)
+
+			return err
+		}
+
 	default:
 		return err
 	}

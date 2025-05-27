@@ -121,8 +121,8 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 
 					if id, err := j.Talk.IqVersionResponse(
 						v,
-						"buny-jabber-bot",
-						"1.dev",
+						j.C.ExeName,
+						j.C.Version,
 						(strings.SplitN(runtime.GOOS, "/", 2))[0],
 					); err != nil {
 						err := fmt.Errorf(

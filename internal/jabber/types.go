@@ -58,6 +58,8 @@ type MyConfig struct {
 	CSign    string `json:"csign,omitempty"`
 	Loglevel string `json:"loglevel,omitempty"`
 	Log      string `json:"log,omitempty"`
+	Version  string `json:"version,omitempty"`
+	ExeName  string `json:"exe_name,omitempty"`
 }
 
 // MyWhiteList прототип структурки с белым списком jid-ов.

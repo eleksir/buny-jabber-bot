@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"time"
+
+	_ "embed"
 
 	"buny-jabber-bot/internal/jabber"
 
@@ -14,8 +17,13 @@ import (
 	"gopkg.in/tomb.v2"
 )
 
+//go:embed version
+var version string
+
 // main - фактичеcки, начало и основное тело программы.
 func main() {
+	var err error
+
 	for {
 		var j = jabber.Jabber{ //nolint:exhaustruct
 			SigChan:        make(chan os.Signal, 1),
@@ -36,6 +44,8 @@ func main() {
 
 			os.Exit(1)
 		}
+
+		j.C.Version = version
 
 		// no panic
 		switch j.C.Loglevel {
@@ -65,6 +75,23 @@ func main() {
 
 			log.SetOutput(logfile)
 		}
+
+		j.C.ExeName, err = os.Executable()
+
+		if err != nil {
+			log.Panicf("Unable to find my executable: %s", err)
+		}
+
+		// handle pricky windows case. But honestly i do not expect it runs on windows.
+		if regexp.MustCompile(".[Ee][Xx][Ee]$").MatchString(j.C.ExeName) {
+			j.C.ExeName = j.C.ExeName[:len(j.C.ExeName)-4]
+
+			if j.C.ExeName == "" {
+				j.C.ExeName = "buny-jabber-bot"
+			}
+		}
+
+		log.Infof("Service %s v%s starting", j.C.ExeName, j.C.Version)
 
 		myLogLevel := log.GetLevel()
 		log.Warnf("Loglevel set to %v", myLogLevel)
