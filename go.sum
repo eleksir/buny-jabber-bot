@@ -3,6 +3,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/eleksir/go-xmpp v1.6.0 h1:bkGr0YVczJWpkyk/IHhZb2ewv+NeHLvdNfds0TFgqao=
 github.com/eleksir/go-xmpp v1.6.0/go.mod h1:Ii6Wemk+yuGQOF+Glt0syjvtcPvdaBLstuNp/+rRJrg=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/hjson/hjson-go v3.3.0+incompatible h1:Rqr+Ya+0aCJMjaE4s8E9YKvuJLuLVpEvz4ONum52vnI=
 github.com/hjson/hjson-go v3.3.0+incompatible/go.mod h1:qsetwF8NlsTsOTwZTApNlTCerV+b2GjYRRcIk4JMFio=
 github.com/jbrukh/bayesian v0.0.0-20231117143245-13ae6f916c7a h1:zSc8tkEGo49/E6cQ9o00si0L9Q/Lu1Hsg8JWKCvzEDU=

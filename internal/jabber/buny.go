@@ -1,6 +1,7 @@
 package jabber
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -52,6 +53,21 @@ func (j *Jabber) BunyPresense(v xmpp.Presence) error { //nolint:gocognit,gocyclo
 					}
 				}
 			}
+		}
+
+		id, err := j.QuerySoftwareVersion(v.From)
+
+		if err != nil {
+			err := fmt.Errorf(
+				"unable to query user software and version: jid=%s id=%s, err=%w",
+				v.JID,
+				id,
+				err,
+			)
+
+			j.GTomb.Kill(err)
+
+			return err
 		}
 
 		evilJid := strings.SplitN(v.JID, "/", 2)[0]
@@ -374,6 +390,210 @@ func (j *Jabber) BunyChat(v xmpp.Chat) error {
 			}
 
 			break
+		}
+	}
+
+	return err
+}
+
+// BunySoftwareVersion производит проверку по чёрному списку версий и названий клинтского ПО.
+func (j *Jabber) BunySoftwareVersion(v xmpp.IQ, ver IqResultSoftwareVersion) error {
+	var err error
+
+	if v.From != "" {
+		// На всякий случай: себя никогда не баним, явным образом
+		if v.From == j.Talk.JID() {
+			return err
+		}
+
+		room := strings.SplitN(v.From, "/", 2)[0]
+
+		var (
+			presenceJSONStrings []string
+		)
+
+		if presenceJSONInterface, present := j.RoomPresences.Get(room); present {
+			presenceJSONStrings = InterfaceToStringSlice(presenceJSONInterface)
+		}
+
+		log.Debugf("Looking up %s in presence db", v.From)
+
+		for _, presenceJSONString := range presenceJSONStrings {
+			var p xmpp.Presence
+			_ = json.Unmarshal([]byte(presenceJSONString), &p)
+
+			if p.Affiliation == "admin" || p.Affiliation == "owner" {
+				log.Infof("Skipping useragent blacklist check for %s because his affiliation is %s", v.From, p.Affiliation)
+
+				continue
+			}
+
+			// На всякий случай.
+			if p.Role == "moderator" {
+				log.Infof("Skipping useragent blacklist check for %s because his role is %s", v.From, p.Role)
+
+				continue
+			}
+
+			if v.From == p.From {
+				log.Errorf("Found jid of %s in presence db: %s", v.From, p.JID)
+
+				// Lookup in global blacklist.
+				for _, cRoom := range j.RoomsConnected {
+					if cRoom == room {
+						for _, bEntry := range j.BlackList.Blacklist {
+							// Обработаем правила глобального чёрного списка
+							if bEntry.RoomName == "" {
+								for _, useragent := range bEntry.UserAgent {
+									switch {
+									case useragent.Name != "" && useragent.Version != "" && useragent.Os != "":
+										if ver.Name == useragent.Name && ver.Version == useragent.Version && ver.Os == useragent.Os {
+											id, err := j.Squash(room, p.JID, bEntry.ReasonEnable, v.Type)
+
+											if err != nil {
+												err := fmt.Errorf(
+													"unable to ban user: id=%s, err=%w",
+													id,
+													err,
+												)
+
+												j.GTomb.Kill(err)
+											}
+
+											return err
+										}
+
+									case useragent.Name != "" && useragent.Version != "":
+										if ver.Name == useragent.Name && ver.Version == useragent.Version {
+											id, err := j.Squash(room, p.JID, bEntry.ReasonEnable, v.Type)
+
+											if err != nil {
+												err := fmt.Errorf(
+													"unable to ban user: id=%s, err=%w",
+													id,
+													err,
+												)
+
+												j.GTomb.Kill(err)
+											}
+
+											return err
+										}
+
+									case useragent.Name != "":
+										if ver.Name == useragent.Name {
+											id, err := j.Squash(room, p.JID, bEntry.ReasonEnable, v.Type)
+
+											if err != nil {
+												err := fmt.Errorf(
+													"unable to ban user: id=%s, err=%w",
+													id,
+													err,
+												)
+
+												j.GTomb.Kill(err)
+											}
+
+											return err
+										}
+
+									case useragent.Version != "":
+										if ver.Version == useragent.Version {
+											id, err := j.Squash(room, p.JID, bEntry.ReasonEnable, v.Type)
+
+											if err != nil {
+												err := fmt.Errorf(
+													"unable to ban user: id=%s, err=%w",
+													id,
+													err,
+												)
+
+												j.GTomb.Kill(err)
+											}
+
+											return err
+										}
+									}
+								}
+							}
+
+							if bEntry.RoomName == room {
+								for _, useragent := range bEntry.UserAgent {
+									switch {
+									case useragent.Name != "" && useragent.Version != "" && useragent.Os != "":
+										if ver.Name == useragent.Name && ver.Version == useragent.Version && ver.Os == useragent.Os {
+											id, err := j.Squash(room, p.JID, bEntry.ReasonEnable, v.Type)
+
+											if err != nil {
+												err := fmt.Errorf(
+													"unable to ban user: id=%s, err=%w",
+													id,
+													err,
+												)
+
+												j.GTomb.Kill(err)
+											}
+
+											return err
+										}
+
+									case useragent.Name != "" && useragent.Version != "":
+										if ver.Name == useragent.Name && ver.Version == useragent.Version {
+											id, err := j.Squash(room, p.JID, bEntry.ReasonEnable, v.Type)
+
+											if err != nil {
+												err := fmt.Errorf(
+													"unable to ban user: id=%s, err=%w",
+													id,
+													err,
+												)
+
+												j.GTomb.Kill(err)
+											}
+
+											return err
+										}
+
+									case useragent.Name != "":
+										if ver.Name == useragent.Name {
+											id, err := j.Squash(room, p.JID, bEntry.ReasonEnable, v.Type)
+
+											if err != nil {
+												err := fmt.Errorf(
+													"unable to ban user: id=%s, err=%w",
+													id,
+													err,
+												)
+
+												j.GTomb.Kill(err)
+											}
+
+											return err
+										}
+
+									case useragent.Version != "":
+										if ver.Version == useragent.Version {
+											id, err := j.Squash(room, p.JID, bEntry.ReasonEnable, v.Type)
+
+											if err != nil {
+												err := fmt.Errorf(
+													"unable to ban user: id=%s, err=%w",
+													id,
+													err,
+												)
+
+												j.GTomb.Kill(err)
+											}
+
+											return err
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 

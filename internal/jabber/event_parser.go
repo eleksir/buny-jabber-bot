@@ -356,7 +356,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 				log.Debugf("Got S2C pong answer from %s to %s", v.From, v.To)
 				j.ServerPingTimestampRx = time.Now().Unix() //nolint:wsl
 
-			// Похоже на понг второй стадии xep-0410 MUC-Ping-а, который у нас не реализован
+			// Похоже на понг второй стадии xep-0410 MUC-Ping-а, который у нас не реализован.
 			case v.To == j.Talk.JID() && string(v.Query) == "<XMLElement></XMLElement>":
 				mucNameMatch := slices.Contains(j.RoomsConnected, v.From)
 
@@ -424,6 +424,41 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					log.Infof("Got strange ban successful message from %s to %s", v.From, v.To)
 					log.Debug(spew.Sdump(e))
 				}
+
+			// Ответ с результатом адресован нам.
+			case v.To == j.Talk.JID():
+				var softwareVersion IqResultSoftwareVersion
+				if err := xml.Unmarshal(v.Query, &softwareVersion); err == nil {
+					if softwareVersion.Os == "" {
+						log.Infof(
+							"Recieved software version query result for %s: software=%s version=%s",
+							v.From,
+							softwareVersion.Name,
+							softwareVersion.Version,
+						)
+					} else {
+						log.Infof(
+							"Recieved software version query result for %s: software=%s version=%s os=%s",
+							v.From,
+							softwareVersion.Name,
+							softwareVersion.Version,
+							softwareVersion.Os,
+						)
+					}
+
+					if err = j.BunySoftwareVersion(v, softwareVersion); err != nil {
+						log.Errorf("Unable to query client software version: %s", err)
+
+						j.GTomb.Kill(err)
+
+						return
+					}
+
+					return
+				}
+
+				log.Info("Got an IQ result. Dunno how deal with it, discarding")
+				log.Debug(spew.Sdump(e))
 
 			default:
 				log.Info("Got an IQ result. Dunno how deal with it, discarding")
@@ -633,7 +668,7 @@ func (j *Jabber) ParseEvent(e interface{}) { //nolint:maintidx,gocognit,gocyclo
 					var p xmpp.Presence
 					_ = json.Unmarshal([]byte(presenceJSONString), &p)
 
-					// Если находим, что у нас уже есть клиент с таким же From, то есть полным nick-ом (для grouchat)
+					// Если находим, что у нас уже есть клиент с таким же From, то есть полным nick-ом (для groupchat)
 					// просто замещаем его.
 					if p.From == v.From {
 						continue

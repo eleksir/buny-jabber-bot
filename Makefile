@@ -3,6 +3,7 @@
 BUILDOPTS=-ldflags="-s -w" -a -gcflags=all=-l -trimpath
 MYNAME=buny-jabber-bot
 BINARY=$(MYNAME)
+TEST1=xml-software-version-query
 
 # На windows имя бинарника может зависеть не только от платформы, но и от выбранной цели, для linux-а суффикс .exe
 # не нужен
@@ -66,5 +67,22 @@ endif
 	go get -d -u -t ./...
 	go mod tidy
 	go mod vendor
+
+test1:
+# Ну и дальше просто билдим бинарник средствами гошки
+ifeq ($(OS),Windows_NT)
+# вариант с powershell на windows
+ifeq ($(SHELL),sh.exe)
+	SET CGO_ENABLED=0
+	go build ${BUILDOPTS} -o ${TEST1} ./cmd/${TEST1}.exe
+else
+# вариант с jetbrains golang на windows
+	CGO_ENABLED=0
+	go build ${BUILDOPTS} -o ${TEST1} ./cmd/${TEST1}.exe
+endif
+# вариант с bash/git (windows) и bash (linux)
+else
+	CGO_ENABLED=0 go build ${BUILDOPTS} -o ${TEST1} ./cmd/${TEST1}
+endif
 
 # vim: set ft=make noet ai ts=4 sw=4 sts=4:

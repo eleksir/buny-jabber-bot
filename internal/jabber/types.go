@@ -79,6 +79,11 @@ type MyBlackList struct {
 		JidRe        []string `json:"jid_re,omitempty"`
 		NickRe       []string `json:"nick_re,omitempty"`
 		PhraseRe     []string `json:"phrase_re,omitempty"`
+		UserAgent    []struct {
+			Name    string `json:"name,omitempty"`
+			Version string `json:"version,omitempty"`
+			Os      string `json:"os,omitempty"`
+		} `json:"user_agent,omitempty"`
 	} `json:"blacklist,omitempty"`
 }
 
@@ -195,6 +200,16 @@ type IqErrorCancelNotAcceptable struct {
 		Text  string `xml:",chardata"`
 		Xmlns string `xml:"xmlns,attr"`
 	} `xml:"not-acceptable"`
+}
+
+// IqResultSoftwareVersion прототип структурки для разбора IQ ответов на запрос о названии и версии клиентского ПО.
+type IqResultSoftwareVersion struct {
+	XMLName xml.Name `xml:"query"`
+	Text    string   `xml:",chardata"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	Name    string   `xml:"name"`
+	Version string   `xml:"version"`
+	Os      string   `xml:"os,omitempty"`
 }
 
 /* vim: set ft=go noet ai ts=4 sw=4 sts=4: */

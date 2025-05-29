@@ -4,6 +4,9 @@ github.com/davecgh/go-spew/spew
 # github.com/eleksir/go-xmpp v1.6.0
 ## explicit; go 1.20
 github.com/eleksir/go-xmpp
+# github.com/google/uuid v1.6.0
+## explicit
+github.com/google/uuid
 # github.com/hjson/hjson-go v3.3.0+incompatible
 ## explicit
 github.com/hjson/hjson-go

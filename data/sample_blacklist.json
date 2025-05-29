@@ -22,10 +22,18 @@
 				"^Buzzing_Wasp$"
 			],
 
-	        # Список регулярок, запрещённых к упоминанию в чяте.
-	        "phrase_re": [
-		        "^Exterminate.$"
-	        ]
+			# Список регулярок, запрещённых к упоминанию в чяте.
+			"phrase_re": [
+				"^Exterminate.$"
+			],
+
+			"user_agent": [
+				{
+					"software": "BadUserAgent",
+					"version": "0.666.0",
+					"os": "DeathStarOS"
+				}
+			]
 		}
 	]
 }
